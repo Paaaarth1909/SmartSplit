@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { Group } from '../App';
+import { Group } from './types';
 import { Users } from 'lucide-react';
 
 interface Props {

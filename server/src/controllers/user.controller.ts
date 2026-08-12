@@ -34,7 +34,6 @@ export const getUserProfile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
-
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -67,7 +66,6 @@ export const updateUserProfile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { fullName, preferredName, email, phone, avatar } = req.body;
-
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -90,7 +88,6 @@ export const updateLinkedAccounts = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { venmo, cashApp, paypal, upi } = req.body;
-
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -112,7 +109,6 @@ export const updateSecuritySettings = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { twoFactorEnabled, passwordChanged } = req.body;
-
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });

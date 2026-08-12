@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import axios from 'axios';
 import { X, Check } from 'lucide-react';
@@ -26,7 +28,7 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onGroupCreated, apiUrl }) 
       await axios.post(apiUrl, { name, description });
       onGroupCreated();
       onClose();
-    } catch (err) {
+    } catch {
       setError('Failed to create group. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -5,7 +5,14 @@ export const validate =
   (schema: ZodSchema) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      req.body = await schema.parseAsync(req.body);
+      const parsed = (await schema.parseAsync({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      })) as { body?: any; query?: any; params?: any };
+      req.body = parsed.body || req.body;
+      req.query = parsed.query || req.query;
+      req.params = parsed.params || req.params;
       next();
     } catch (error) {
       if (error instanceof ZodError) {

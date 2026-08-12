@@ -44,7 +44,6 @@ export const getGroupById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const group = await Group.findById(id);
-
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
     }
@@ -59,13 +58,11 @@ export const addMember = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, email, phone, role } = req.body;
-
     if (!name || typeof name !== "string") {
       return res.status(400).json({ error: "Member name is required" });
     }
 
     const group = await Group.findById(id);
-
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
     }
@@ -90,9 +87,7 @@ export const addMember = async (req: Request, res: Response) => {
 export const removeMember = async (req: Request, res: Response) => {
   try {
     const { id, memberId } = req.params;
-
     const group = await Group.findById(id);
-
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
     }
@@ -117,9 +112,7 @@ export const removeMember = async (req: Request, res: Response) => {
 export const deleteGroup = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     const deletedGroup = await Group.findByIdAndDelete(id);
-
     if (!deletedGroup) {
       return res.status(404).json({ error: "Group not found" });
     }
