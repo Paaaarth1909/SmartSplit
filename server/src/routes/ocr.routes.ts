@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { parseReceipt } from "../controllers/ocr.controller.js";
+import { parseNlpExpense } from "../controllers/nlp.controller.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -10,5 +11,7 @@ const upload = multer({
 const router = Router();
 
 router.post("/ocr", upload.single("receipt"), parseReceipt);
+router.post("/nlp", parseNlpExpense);
+router.post("/parse-text", parseNlpExpense);
 
 export default router;
