@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import { processReceiptImage } from "../services/ocr.service.js";
 
@@ -7,10 +6,12 @@ export const parseReceipt = async (req: Request, res: Response) => {
     let imageBuffer: Buffer | null = null;
     let mimeType = "image/jpeg";
 
-    if (req.file) {
-      imageBuffer = req.file.buffer;
-      mimeType = req.file.mimetype;
-    } else if (req.body.imageBase64) {
+    const file = req.file || (Array.isArray(req.files) && req.files.length > 0 ? req.files[0] : null);
+
+    if (file) {
+      imageBuffer = file.buffer;
+      mimeType = file.mimetype;
+    } else if (req.body && req.body.imageBase64) {
       const matches = req.body.imageBase64.match(/^data:(.+);base64,(.+)$/);
       if (matches) {
         mimeType = matches[1];

@@ -10,7 +10,7 @@ const upload = multer({
 
 const router = Router();
 
-router.post("/ocr", upload.single("receipt"), parseReceipt);
+router.post("/ocr", upload.any(), parseReceipt);
 router.post("/nlp", parseNlpExpense);
 router.post("/parse-text", parseNlpExpense);
 

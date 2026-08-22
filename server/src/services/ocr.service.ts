@@ -17,7 +17,7 @@ export interface OcrResult {
   total: number;
 }
 
-const MODELS = ["gemini-2.5-flash"];
+const MODELS = ["gemini-3.6-flash"];
 
 export const processReceiptImage = async (
   imageBuffer: Buffer,
@@ -90,9 +90,9 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
       category: parsed.category || "General",
       items: Array.isArray(parsed.items)
         ? parsed.items.map((item: { name?: string; price?: number }) => ({
-            name: item.name || "Item",
-            price: typeof item.price === "number" ? item.price : 0
-          }))
+          name: item.name || "Item",
+          price: typeof item.price === "number" ? item.price : 0
+        }))
         : [],
       subtotal: typeof parsed.subtotal === "number" ? parsed.subtotal : 0,
       tax: typeof parsed.tax === "number" ? parsed.tax : 0,
