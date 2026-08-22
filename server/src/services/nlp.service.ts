@@ -11,7 +11,7 @@ export interface ParsedNlpExpense {
   date: string;
 }
 
-const MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash"];
+const MODELS = ["gemini-3.6-flash"];
 
 export const parseNaturalLanguageInput = async (
   inputPrompt: string
