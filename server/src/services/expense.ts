@@ -11,6 +11,11 @@ import {
   applyExpenseToBalances,
   reverseExpenseFromBalances,
 } from "./balanceEngine.js";
+import {
+  checkForDuplicates,
+  storeReceiptHash,
+  removeReceiptHash,
+} from "./duplicateDetection.service.js";
 
 interface CreateExpenseInput {
   groupId: string;
@@ -24,6 +29,14 @@ interface CreateExpenseInput {
   receiptUrl?: string;
   aiGenerated?: boolean;
   date?: Date;
+  /** Perceptual hash forwarded from the OCR response */
+  imageHash?: string;
+  /** Merchant name extracted by OCR */
+  receiptMerchant?: string;
+  /** Receipt date (YYYY-MM-DD) extracted by OCR */
+  receiptDate?: string;
+  /** When true, skip duplicate detection (user confirmed override) */
+  forceCreate?: boolean;
 }
 
 const assertGroupMembership = async (groupId: string, userIds: string[]) => {
@@ -54,12 +67,42 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
     receiptUrl,
     aiGenerated,
     date,
+    imageHash,
+    receiptMerchant,
+    receiptDate,
+    forceCreate,
   } = input;
 
   await assertGroupMembership(groupId, [
     paidBy,
     ...participants.map((p) => p.userId),
   ]);
+
+  // ------------------------------------------------------------------
+  // Duplicate detection — Layer 2 (metadata fingerprint + image hash)
+  // Skipped when the user explicitly confirmed via forceCreate.
+  // ------------------------------------------------------------------
+  if (!forceCreate) {
+    const hasReceiptData = imageHash || (receiptMerchant && receiptDate);
+    if (hasReceiptData) {
+      const dupCheck = await checkForDuplicates({
+        groupId,
+        imageHash,
+        merchant: receiptMerchant,
+        total: amount,
+        receiptDate,
+      });
+
+      if (dupCheck.isDuplicate) {
+        throw new AppError("Potential duplicate receipt detected", 409, {
+          isDuplicate: true,
+          matchType: dupCheck.matchType,
+          matchedExpenseId: dupCheck.matchedExpenseId,
+          confidence: dupCheck.confidence,
+        });
+      }
+    }
+  }
 
   const computedSplits = calculateSplit(amount, splitType, participants);
 
@@ -105,6 +148,21 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
 
       expense = created;
     });
+
+    // Store receipt hash for future duplicate checks (best-effort, non-blocking)
+    if (imageHash || receiptMerchant) {
+      storeReceiptHash({
+        expenseId: expense._id.toString(),
+        groupId,
+        imageHash,
+        merchant: receiptMerchant,
+        total: amount,
+        receiptDate,
+        createdBy,
+      }).catch((err) =>
+        console.warn("Failed to store receipt hash:", err)
+      );
+    }
 
     return expense.populate([
       { path: "paidBy", select: "name email avatarUrl" },
@@ -221,6 +279,11 @@ export const deleteExpense = async (expenseId: string): Promise<void> => {
 
       await expense.deleteOne({ session });
     });
+
+    // Clean up the receipt hash record (best-effort)
+    removeReceiptHash(expenseId).catch((err) =>
+      console.warn("Failed to remove receipt hash:", err)
+    );
   } finally {
     await session.endSession();
   }

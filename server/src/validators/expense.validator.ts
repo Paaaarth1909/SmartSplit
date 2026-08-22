@@ -23,6 +23,14 @@ export const createExpenseSchema = z.object({
     receiptUrl: z.string().url().optional(),
     aiGenerated: z.boolean().optional(),
     date: z.coerce.date().optional(),
+    /** Perceptual hash from OCR duplicate detection */
+    imageHash: z.string().optional(),
+    /** Merchant name extracted by OCR */
+    receiptMerchant: z.string().optional(),
+    /** Receipt date (YYYY-MM-DD) from OCR */
+    receiptDate: z.string().optional(),
+    /** Skip duplicate check (user confirmed override) */
+    forceCreate: z.boolean().optional(),
   }),
 });
 
