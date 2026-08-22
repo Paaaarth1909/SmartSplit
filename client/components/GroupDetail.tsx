@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import axios from 'axios';
-import { ArrowLeft, UserPlus, Trash2, Mail, User, Shield, Users, Phone } from 'lucide-react';
+import { ArrowLeft, UserPlus, Trash2, Mail, User, Shield, Users, Phone, Plus, Receipt } from 'lucide-react';
 import { Group } from './types';
+import AddExpenseModal from './AddExpenseModal';
 
 interface Props {
   group: Group;
@@ -20,6 +21,7 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
   const [newMemberPhone, setNewMemberPhone] = useState('');
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [error, setError] = useState('');
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,9 +78,14 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
         <button className="btn" onClick={onBack} style={{ background: 'rgba(255,255,255,0.05)' }}>
           <ArrowLeft size={18} /> Back to Groups
         </button>
-        <button className="btn btn-danger" onClick={handleDeleteGroup}>
-          <Trash2 size={16} /> Delete Group
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="btn btn-primary" onClick={() => setShowExpenseModal(true)}>
+            <Plus size={16} /> Add Expense
+          </button>
+          <button className="btn btn-danger" onClick={handleDeleteGroup}>
+            <Trash2 size={16} /> Delete Group
+          </button>
+        </div>
       </div>
 
       <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
@@ -192,6 +199,17 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
         </div>
 
       </div>
+
+      {showExpenseModal && (
+        <AddExpenseModal
+          group={group}
+          onClose={() => setShowExpenseModal(false)}
+          onExpenseCreated={() => {
+            setShowExpenseModal(false);
+            // Optionally refresh expenses here
+          }}
+        />
+      )}
     </div>
   );
 };
