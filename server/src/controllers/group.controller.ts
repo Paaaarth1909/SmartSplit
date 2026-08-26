@@ -122,3 +122,17 @@ export const deleteGroup = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed to delete group" });
   }
 };
+
+export const getGroupMessages = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { GroupMessage } = await import("../models/GroupMessage.js");
+    const messages = await GroupMessage.find({ group: id })
+      .sort({ createdAt: 1 })
+      .limit(100);
+
+    return res.status(200).json({ success: true, data: messages });
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to fetch group messages" });
+  }
+};

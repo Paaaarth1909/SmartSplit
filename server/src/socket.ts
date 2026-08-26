@@ -1,7 +1,15 @@
 import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
+import { GroupMessage } from "./models/GroupMessage.js";
 
 let io: Server | null = null;
+
+export interface ChatMessagePayload {
+  groupId: string;
+  senderId: string;
+  senderName: string;
+  message: string;
+}
 
 export const initSocket = (httpServer: HttpServer): Server => {
   io = new Server(httpServer, {
@@ -13,6 +21,8 @@ export const initSocket = (httpServer: HttpServer): Server => {
 
   io.on("connection", (socket: Socket) => {
     console.log(`[Socket.io] Client connected: ${socket.id}`);
+
+    socket.join("global");
 
     socket.on("join-group", (groupId: string) => {
       if (groupId) {
@@ -27,6 +37,35 @@ export const initSocket = (httpServer: HttpServer): Server => {
         const room = `group:${groupId}`;
         socket.leave(room);
         console.log(`[Socket.io] Socket ${socket.id} left room: ${room}`);
+      }
+    });
+
+    socket.on("chat:send", async (payload: ChatMessagePayload) => {
+      try {
+        const { groupId, senderId, senderName, message } = payload;
+        if (!groupId || !message || !message.trim()) return;
+
+        const chatRecord = await GroupMessage.create({
+          group: groupId,
+          senderId: senderId || "anonymous",
+          senderName: senderName || "Member",
+          message: message.trim()
+        });
+
+        const room = `group:${groupId}`;
+        const broadcastData = {
+          _id: chatRecord._id,
+          groupId,
+          senderId: chatRecord.senderId,
+          senderName: chatRecord.senderName,
+          message: chatRecord.message,
+          createdAt: chatRecord.createdAt
+        };
+
+        io?.to(room).emit("chat:message", broadcastData);
+        console.log(`[Socket.io] Live chat message broadcasted in ${room}`);
+      } catch (err) {
+        console.error("[Socket.io] Error processing live chat message:", err);
       }
     });
 

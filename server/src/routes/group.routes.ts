@@ -5,7 +5,8 @@ import {
   getGroupById,
   addMember,
   removeMember,
-  deleteGroup
+  deleteGroup,
+  getGroupMessages
 } from "../controllers/group.controller.js";
 
 const router = Router();
@@ -13,6 +14,7 @@ const router = Router();
 router.post("/", createGroup);
 router.get("/", getGroups);
 router.get("/:id", getGroupById);
+router.get("/:id/messages", getGroupMessages);
 router.delete("/:id", deleteGroup);
 router.post("/:id/members", addMember);
 router.delete("/:id/members/:memberId", removeMember);
