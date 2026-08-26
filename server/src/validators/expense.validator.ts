@@ -16,6 +16,7 @@ export const createExpenseSchema = z.object({
     groupId: objectId,
     description: z.string().trim().min(1).max(200),
     amount: z.number().positive(),
+    currency: z.string().trim().max(10).optional(),
     category: z.string().trim().max(50).optional(),
     paidBy: objectId,
     splitType: splitTypeSchema,
@@ -39,6 +40,7 @@ export const updateExpenseSchema = z.object({
   body: z.object({
     description: z.string().trim().min(1).max(200).optional(),
     amount: z.number().positive().optional(),
+    currency: z.string().trim().max(10).optional(),
     category: z.string().trim().max(50).optional(),
     paidBy: objectId.optional(),
     splitType: splitTypeSchema.optional(),

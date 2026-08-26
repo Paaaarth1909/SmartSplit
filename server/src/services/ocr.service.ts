@@ -9,6 +9,7 @@ export interface OcrItem {
 export interface OcrResult {
   merchant: string;
   date: string;
+  currency: string;
   category: string;
   items: OcrItem[];
   subtotal: number;
@@ -33,6 +34,7 @@ export const processReceiptImage = async (
   const prompt = `Analyze this receipt image and extract the following details into a strict JSON object:
 - merchant (string: store/restaurant name)
 - date (string: YYYY-MM-DD or readable date string if found, otherwise today's date)
+- currency (string: 3-letter ISO code detected from currency symbols like $, €, £, ₹, ¥, AED, ฿ e.g. USD, EUR, INR, GBP, JPY, CAD, AUD, AED, THB)
 - category (string: Dining, Groceries, Travel, Entertainment, Utilities, or General)
 - items (array of objects: { name: string, price: number })
 - subtotal (number)
@@ -87,6 +89,7 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
     return {
       merchant: parsed.merchant || "Unknown Merchant",
       date: parsed.date || new Date().toISOString().split("T")[0],
+      currency: parsed.currency ? String(parsed.currency).toUpperCase() : "USD",
       category: parsed.category || "General",
       items: Array.isArray(parsed.items)
         ? parsed.items.map((item: { name?: string; price?: number }) => ({

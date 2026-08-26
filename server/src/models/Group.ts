@@ -12,6 +12,7 @@ export interface IMember {
 export interface IGroup extends Document {
   name: string;
   description?: string;
+  currency: string;
   members: IMember[];
   createdBy?: string;
   createdAt: Date;
@@ -28,6 +29,7 @@ const MemberSchema = new Schema<IMember>({
 const GroupSchema = new Schema<IGroup>({
   name: { type: String, required: true, trim: true },
   description: { type: String, default: "" },
+  currency: { type: String, default: "USD", uppercase: true, trim: true },
   members: [MemberSchema],
   createdBy: { type: String, default: "system" },
   createdAt: { type: Date, default: Date.now }

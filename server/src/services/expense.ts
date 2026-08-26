@@ -16,11 +16,14 @@ import {
   storeReceiptHash,
   removeReceiptHash,
 } from "./duplicateDetection.service.js";
+import { convertCurrency } from "./currency.service.js";
+import { emitToGroup } from "../socket.js";
 
 interface CreateExpenseInput {
   groupId: string;
   description: string;
   amount: number;
+  currency?: string;
   category?: string;
   paidBy: string;
   splitType: SplitType;
@@ -52,6 +55,7 @@ const assertGroupMembership = async (groupId: string, userIds: string[]) => {
       { invalidUserIds: invalid }
     );
   }
+  return group;
 };
 
 export const createExpense = async (input: CreateExpenseInput): Promise<IExpense> => {
@@ -59,6 +63,7 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
     groupId,
     description,
     amount,
+    currency: rawCurrency,
     category,
     paidBy,
     splitType,
@@ -73,10 +78,24 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
     forceCreate,
   } = input;
 
-  await assertGroupMembership(groupId, [
+  const group = await assertGroupMembership(groupId, [
     paidBy,
     ...participants.map((p) => p.userId),
   ]);
+
+  const groupCurrency = group.currency || "USD";
+  const expenseCurrency = (rawCurrency || groupCurrency).toUpperCase();
+
+  let effectiveAmount = amount;
+  let exchangeRate = 1.0;
+  let convertedAmount = amount;
+
+  if (expenseCurrency !== groupCurrency.toUpperCase()) {
+    const conversion = await convertCurrency(amount, expenseCurrency, groupCurrency);
+    exchangeRate = conversion.exchangeRate;
+    convertedAmount = conversion.convertedAmount;
+    effectiveAmount = convertedAmount;
+  }
 
   // ------------------------------------------------------------------
   // Duplicate detection — Layer 2 (metadata fingerprint + image hash)
@@ -104,7 +123,7 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
     }
   }
 
-  const computedSplits = calculateSplit(amount, splitType, participants);
+  const computedSplits = calculateSplit(effectiveAmount, splitType, participants);
 
   const session = await mongoose.startSession();
   try {
@@ -116,7 +135,11 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
           {
             group: groupId,
             description,
-            amount,
+            amount: effectiveAmount,
+            currency: expenseCurrency,
+            originalAmount: amount,
+            exchangeRate,
+            convertedAmount,
             category,
             paidBy,
             splitType,
@@ -138,7 +161,7 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
       await applyExpenseToBalances({
         groupId,
         payerId: paidBy,
-        amount,
+        amount: effectiveAmount,
         splits: computedSplits.map((s) => ({
           user: new Types.ObjectId(s.userId),
           amount: s.amount,
@@ -164,10 +187,13 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
       );
     }
 
-    return expense.populate([
+    const populated = await expense.populate([
       { path: "paidBy", select: "name email avatarUrl" },
       { path: "splits.user", select: "name email avatarUrl" },
     ]);
+
+    emitToGroup(groupId, "expense:created", populated);
+    return populated;
   } finally {
     await session.endSession();
   }
@@ -277,7 +303,9 @@ export const deleteExpense = async (expenseId: string): Promise<void> => {
         session,
       });
 
+      const groupId = expense.group.toString();
       await expense.deleteOne({ session });
+      emitToGroup(groupId, "expense:deleted", { expenseId, groupId });
     });
 
     // Clean up the receipt hash record (best-effort)

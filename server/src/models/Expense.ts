@@ -18,6 +18,10 @@ export interface IExpense extends Document {
   group: Types.ObjectId;
   description: string;
   amount: number;
+  currency: string;
+  originalAmount?: number;
+  exchangeRate?: number;
+  convertedAmount?: number;
   category: string;
   paidBy: Types.ObjectId;
   splitType: SplitType;
@@ -55,6 +59,10 @@ const expenseSchema = new Schema<IExpense>(
     group: { type: Schema.Types.ObjectId, ref: "Group", required: true, index: true },
     description: { type: String, required: true, trim: true },
     amount: { type: Number, required: true, min: 0.01 },
+    currency: { type: String, default: "USD", uppercase: true, trim: true },
+    originalAmount: { type: Number },
+    exchangeRate: { type: Number, default: 1.0 },
+    convertedAmount: { type: Number },
     category: { type: String, default: "General" },
     paidBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     splitType: {
