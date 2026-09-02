@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validate.middleware.js";
 import {
   createExpenseSchema,
@@ -11,8 +10,6 @@ import {
 import * as expenseController from "../controllers/expense.controller.js";
 
 const router = Router();
-
-router.use(requireAuth);
 router.post(
   "/preview-split",
   validate(previewSplitSchema),
