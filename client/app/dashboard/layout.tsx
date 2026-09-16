@@ -57,8 +57,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="p-4 border-t border-white/5 flex flex-col gap-1.5">
-          <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors">
-            <Settings className="w-4 h-4" /> Settings
+          <Link href="/dashboard/settings" className={getLinkClass("/dashboard/settings")}>
+            <Settings className={getIconClass("/dashboard/settings")} /> Settings
           </Link>
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/60 text-sm font-medium">
             <LogOut className="w-4 h-4" /> 
