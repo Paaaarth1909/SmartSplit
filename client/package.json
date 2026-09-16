@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.4",
     "axios": "^1.7.0",
     "clsx": "^2.1.1",
     "framer-motion": "^13.3.0",
@@ -16,6 +17,7 @@
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {

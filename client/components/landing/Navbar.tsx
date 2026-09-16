@@ -2,8 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useAuth, SignInButton, UserButton } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default function Navbar() {
+  const { isSignedIn } = useAuth();
+  
   return (
     <motion.nav 
       initial={{ y: -50, opacity: 0 }}
@@ -24,12 +28,27 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="text-sm font-medium text-muted-foreground hover:text-white transition-colors hidden sm:block">
-          Log In
-        </button>
-        <button className="px-5 py-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full transition-colors">
-          Get Started Free
-        </button>
+        {!isSignedIn ? (
+          <>
+            <SignInButton mode="modal">
+              <button className="text-sm font-medium text-muted-foreground hover:text-white transition-colors hidden sm:block">
+                Log In
+              </button>
+            </SignInButton>
+            <SignInButton mode="modal">
+              <button className="px-5 py-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full transition-colors">
+                Get Started Free
+              </button>
+            </SignInButton>
+          </>
+        ) : (
+          <>
+            <Link href="/dashboard" className="text-sm font-semibold text-white mr-4 hover:text-white/80 transition-colors">
+              Dashboard
+            </Link>
+            <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
+          </>
+        )}
       </div>
     </motion.nav>
   );

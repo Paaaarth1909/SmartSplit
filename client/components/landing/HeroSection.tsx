@@ -33,9 +33,9 @@ export default function HeroSection() {
         transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
         className="flex items-center gap-4"
       >
-        <button className="px-6 py-3 rounded-full text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">
+        <a href="/dashboard" className="px-6 py-3 rounded-full text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">
           Launch Web App
-        </button>
+        </a>
         <button className="px-6 py-3 rounded-full text-sm font-semibold text-white bg-transparent hover:bg-white/5 transition-colors">
           View Interactive Demo
         </button>
