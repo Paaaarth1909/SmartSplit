@@ -1,13 +1,19 @@
 import { Request, Response } from "express";
 import { Group } from "../models/Group.js";
+import { User } from "../models/User.js";
+import { Expense } from "../models/Expense.js";
+import { calculateSettlements } from "../utils/debtCalculator.js";
 
 export const createGroup = async (req: Request, res: Response) => {
   try {
     const { name, description, initialMembers } = req.body;
+    const userId = (req as any).user.id;
 
     if (!name || typeof name !== "string") {
       return res.status(400).json({ error: "Group name is required" });
     }
+
+    const currentUser = await User.findById(userId);
 
     const members = Array.isArray(initialMembers)
       ? initialMembers.map((m: { name: string; email?: string; phone?: string; role?: "admin" | "member" }) => ({
@@ -19,10 +25,21 @@ export const createGroup = async (req: Request, res: Response) => {
         }))
       : [];
 
+    if (currentUser && !members.some(m => m.email === currentUser.email)) {
+      members.push({
+        name: currentUser.fullName || currentUser.preferredName || "Unknown",
+        email: currentUser.email,
+        phone: currentUser.phone || "",
+        role: "admin",
+        joinedAt: new Date()
+      });
+    }
+
     const group = await Group.create({
       name,
       description: description || "",
-      members
+      members,
+      createdBy: userId
     });
 
     return res.status(201).json({ success: true, data: group });
@@ -134,5 +151,110 @@ export const getGroupMessages = async (req: Request, res: Response) => {
     return res.status(200).json({ success: true, data: messages });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch group messages" });
+  }
+};
+
+export const getGroupDetails = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.id;
+
+    const group = await Group.findById(id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    // Validate user is in group
+    const user = await User.findById(userId);
+    if (!user) return res.status(401).json({ error: "User not found" });
+    const isMember = group.members.some(m => m.email === user.email || m.phone === user.phone);
+    if (!isMember) return res.status(403).json({ error: "Access denied" });
+
+    const expenses = await Expense.find({ group: id }).populate('paidBy', 'fullName email');
+
+    const balancesMap = new Map<string, { name: string, netAmount: number }>();
+    let totalShared = 0;
+
+    // Initialize map with all members
+    for (const member of group.members) {
+      // Find the corresponding User document to use object ID as the key, since Expenses use User IDs.
+      const memberUser = await User.findOne({ 
+        $or: [
+          { email: member.email },
+          { phone: member.phone !== "" ? member.phone : "__NONE__" },
+          { fullName: member.name }
+        ] 
+      });
+      if (memberUser) {
+        balancesMap.set(memberUser._id.toString(), { name: memberUser.fullName || member.name, netAmount: 0 });
+      }
+    }
+
+    expenses.forEach(exp => {
+      totalShared += exp.amount;
+      const payerId = exp.paidBy._id.toString();
+      
+      exp.splits.forEach(split => {
+        const splitUserId = split.user.toString();
+        
+        // Payer is owed this amount by the split user
+        if (payerId !== splitUserId) {
+          // Payer gains (is owed)
+          if (balancesMap.has(payerId)) {
+            balancesMap.get(payerId)!.netAmount += split.amount;
+          }
+          
+          // Split user loses (owes)
+          if (balancesMap.has(splitUserId)) {
+            balancesMap.get(splitUserId)!.netAmount -= split.amount;
+          }
+        }
+      });
+    });
+
+    const balances = Array.from(balancesMap.entries()).map(([uid, data]) => ({
+      userId: uid,
+      name: data.name,
+      netAmount: data.netAmount
+    }));
+
+    const settlements = calculateSettlements(balances);
+    
+    // Group Balance Distribution (Owed vs Paid for the specific user)
+    let userOwed = 0;
+    let userPaid = 0;
+    
+    expenses.forEach(exp => {
+      if (exp.paidBy._id.toString() === userId) {
+        userPaid += exp.amount;
+      }
+      exp.splits.forEach(split => {
+        if (split.user.toString() === userId) {
+          userOwed += split.amount;
+        }
+      });
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        group: {
+          id: group._id,
+          name: group.name,
+          category: (group as any).category || 'GENERAL',
+          memberCount: group.members.length,
+          members: group.members
+        },
+        balances,
+        settlements,
+        distribution: {
+          totalShared,
+          userOwed,
+          userPaid
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in getGroupDetails:", error);
+    return res.status(500).json({ error: "Failed to fetch group details" });
   }
 };

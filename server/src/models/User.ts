@@ -26,6 +26,10 @@ export interface IUser extends Document {
   preferences: {
     currency: string;
     aiProfileOptimized: boolean;
+    theme: string;
+    compactDensity: boolean;
+    liveForex: boolean;
+    acousticFeedback: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -60,7 +64,11 @@ const UserSchema = new Schema<IUser>(
     },
     preferences: {
       currency: { type: String, default: "USD" },
-      aiProfileOptimized: { type: Boolean, default: true }
+      aiProfileOptimized: { type: Boolean, default: true },
+      theme: { type: String, default: "dark" },
+      compactDensity: { type: Boolean, default: false },
+      liveForex: { type: Boolean, default: true },
+      acousticFeedback: { type: Boolean, default: true }
     }
   },
   { timestamps: true }

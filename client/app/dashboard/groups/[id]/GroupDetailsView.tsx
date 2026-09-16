@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Send, Paperclip, Plus } from 'lucide-react';
+import { Send, Paperclip, Plus, MessageSquare, X } from 'lucide-react';
 import Image from 'next/image';
 
 interface GroupDetailsViewProps {
@@ -23,6 +23,7 @@ export default function GroupDetailsView({
   const [messages, setMessages] = useState<any[]>(initialMessages);
   const [chatInput, setChatInput] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { group, balances, settlements, distribution } = groupData;
@@ -76,7 +77,7 @@ export default function GroupDetailsView({
   const userNetBalance = balances.find((b: any) => b.userId === currentUserId)?.netAmount || 0;
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 overflow-hidden relative">
       
       {/* LEFT COLUMN: Member Details */}
       <div className="w-full lg:w-64 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 custom-scrollbar">
@@ -238,11 +239,17 @@ export default function GroupDetailsView({
       </div>
 
       {/* RIGHT COLUMN: Live Chat */}
-      <div className="w-full lg:w-[320px] flex flex-col shrink-0 bg-[#0f0f0f] border-l border-white/10 h-full relative">
-        <div className="p-5 border-b border-white/5 bg-[#0a0a0a]">
-          <h2 className="text-lg font-bold text-white tracking-tight">Live Chat</h2>
-          <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Group Chat: {group.name}</p>
-        </div>
+      {isChatOpen ? (
+        <div className="w-full lg:w-[320px] flex flex-col shrink-0 bg-[#0f0f0f] border-l border-white/10 h-full relative">
+          <div className="p-5 border-b border-white/5 bg-[#0a0a0a] flex justify-between items-center">
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">Live Chat</h2>
+              <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Group Chat: {group.name}</p>
+            </div>
+            <button onClick={() => setIsChatOpen(false)} className="text-white/40 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 custom-scrollbar">
           {messages.length === 0 ? (
@@ -298,6 +305,14 @@ export default function GroupDetailsView({
           </form>
         </div>
       </div>
+      ) : (
+        <button 
+          onClick={() => setIsChatOpen(true)}
+          className="absolute bottom-8 right-8 w-14 h-14 bg-[#b2f5d1] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(178,245,209,0.3)] hover:scale-105 hover:bg-[#9de4c2] transition-all z-50"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 }

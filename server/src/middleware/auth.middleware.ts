@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from "express";
+import { getAuth, clerkClient } from "@clerk/express";
+import { User } from "../models/User.js";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -8,32 +10,48 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export const requireAuth = (
+export const requireAuth = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
+  try {
+    const auth = getAuth(req);
+    
+    // In development with no Clerk token, we can fallback to a mock user for testing if needed
+    // But since the frontend now passes real Clerk tokens, we should strictly require it.
+    if (!auth.userId) {
+      return res.status(401).json({ success: false, error: "Unauthorized access - missing or invalid Clerk token" });
+    }
 
-  if (process.env.NODE_ENV === "development" && !authHeader) {
+    // Sync user with our MongoDB
+    let user = await User.findOne({ clerkId: auth.userId });
+    
+    if (!user) {
+      // Fetch user details from Clerk to initialize MongoDB document
+      const clerkUser = await clerkClient.users.getUser(auth.userId);
+      const email = clerkUser.emailAddresses[0]?.emailAddress || "";
+      const fullName = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || "User";
+      
+      user = await User.create({
+        clerkId: auth.userId,
+        email: email,
+        fullName: fullName,
+        preferredName: clerkUser.firstName || fullName,
+        avatar: clerkUser.imageUrl || ""
+      });
+    }
+
+    // Attach DB user info to request
     req.user = {
-      id: req.headers["x-user-id"] as string || "dev_user_123",
-      email: "dev@smartsplit.app"
+      id: user._id.toString(),
+      email: user.email,
+      clerkId: user.clerkId
     };
-    return next();
-  }
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({
-      success: false,
-      error: "Authentication token missing or invalid format"
-    });
+    next();
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    return res.status(401).json({ success: false, error: "Authentication failed" });
   }
-
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ success: false, error: "Unauthorized access" });
-  }
-
-  next();
 };

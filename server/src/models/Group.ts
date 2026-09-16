@@ -29,7 +29,7 @@ const MemberSchema = new Schema<IMember>({
 const GroupSchema = new Schema<IGroup>({
   name: { type: String, required: true, trim: true },
   description: { type: String, default: "" },
-  currency: { type: String, default: "USD", uppercase: true, trim: true },
+  currency: { type: String, default: "INR", uppercase: true, trim: true },
   members: [MemberSchema],
   createdBy: { type: String, default: "system" },
   createdAt: { type: Date, default: Date.now }

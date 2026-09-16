@@ -59,7 +59,7 @@ const expenseSchema = new Schema<IExpense>(
     group: { type: Schema.Types.ObjectId, ref: "Group", required: true, index: true },
     description: { type: String, required: true, trim: true },
     amount: { type: Number, required: true, min: 0.01 },
-    currency: { type: String, default: "USD", uppercase: true, trim: true },
+    currency: { type: String, default: "INR", uppercase: true, trim: true },
     originalAmount: { type: Number },
     exchangeRate: { type: Number, default: 1.0 },
     convertedAmount: { type: Number },

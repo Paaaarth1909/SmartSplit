@@ -3,6 +3,7 @@ import http from "http";
 import dotenv from "dotenv";
 import path from "path";
 import cors from "cors";
+import { clerkMiddleware } from "@clerk/express";
 import { connectDB } from "./config/db.js";
 import groupRoutes from "./routes/group.routes.js";
 import userRoutes from "./routes/user.routes.js";
@@ -20,6 +21,9 @@ const PORT = process.env.PORT || 5050;
 
 app.use(cors());
 app.use(express.json());
+
+// Initialize Clerk middleware to parse incoming tokens
+app.use(clerkMiddleware());
 
 app.use("/api/groups", groupRoutes);
 app.use("/api/users", userRoutes);
