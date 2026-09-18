@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Clock, Users, Settings, LogOut, Plus, Bell, HelpCircle } from "lucide-react";
+import { LayoutDashboard, Clock, Users, UserPlus, Settings, LogOut, Plus, Bell, HelpCircle } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -46,6 +46,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
               <Link href="/dashboard/groups" className={getLinkClass("/dashboard/groups")}>
                 <Users className={getIconClass("/dashboard/groups")} /> Groups
+              </Link>
+              <Link href="/dashboard/friends" className={getLinkClass("/dashboard/friends")}>
+                <UserPlus className={getIconClass("/dashboard/friends")} /> Friends
               </Link>
               <Link href="/dashboard/profile" className={getLinkClass("/dashboard/profile")}>
                 <svg className={getIconClass("/dashboard/profile")} fill="none" viewBox="0 0 24 24" stroke="currentColor">

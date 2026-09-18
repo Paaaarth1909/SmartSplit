@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Send, Paperclip, Plus, MessageSquare, X } from 'lucide-react';
 import Image from 'next/image';
+import CalculatingLoader from '../../../../components/CalculatingLoader';
 
 interface GroupDetailsViewProps {
   groupData: any;
@@ -22,6 +23,7 @@ export default function GroupDetailsView({
 }: GroupDetailsViewProps) {
   const [messages, setMessages] = useState<any[]>(initialMessages);
   const [chatInput, setChatInput] = useState('');
+  const [isCalculating, setIsCalculating] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,6 +80,7 @@ export default function GroupDetailsView({
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 overflow-hidden relative">
+      <CalculatingLoader isOpen={isCalculating} groupName={group.name} />
       
       {/* LEFT COLUMN: Member Details */}
       <div className="w-full lg:w-64 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 custom-scrollbar">
@@ -136,7 +139,11 @@ export default function GroupDetailsView({
         <div className="p-6 border-b border-white/5 z-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-white tracking-tight">Owe and Pay</h2>
-            <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-black hover:bg-[#b2f5d1] transition-colors">
+            <button 
+              onClick={() => setIsCalculating(true)}
+              className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-black hover:bg-[#b2f5d1] transition-colors"
+              title="Test Loader"
+            >
               <Plus className="w-4 h-4" />
             </button>
           </div>
