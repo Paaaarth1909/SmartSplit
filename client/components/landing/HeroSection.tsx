@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { LiquidButton } from '../ui/button';
+import Link from 'next/link';
 
 export default function HeroSection() {
   return (
@@ -33,12 +35,14 @@ export default function HeroSection() {
         transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
         className="flex items-center gap-4"
       >
-        <a href="/dashboard" className="px-6 py-3 rounded-full text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-colors">
-          Launch Web App
-        </a>
-        <button className="px-6 py-3 rounded-full text-sm font-semibold text-white bg-transparent hover:bg-white/5 transition-colors">
+        <Link href="/dashboard">
+          <LiquidButton className="text-white bg-white/10 px-8" variant="default" size="lg">
+            Launch Web App
+          </LiquidButton>
+        </Link>
+        <LiquidButton className="text-white/70 hover:text-white" variant="ghost" size="lg">
           View Interactive Demo
-        </button>
+        </LiquidButton>
       </motion.div>
     </section>
   );

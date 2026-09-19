@@ -9,16 +9,6 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ initialData, token }: SettingsViewProps) {
-  const [activeTab, setActiveTab] = useState('General & Account');
-  const tabs = [
-    'General & Account', 
-    'Split & Ledger Engine', 
-    'Security & Sessions', 
-    'Notification Rules', 
-    'Billing & Membership', 
-    'Developer API'
-  ];
-
   const [formData, setFormData] = useState({
     fullName: initialData?.fullName || '',
     email: initialData?.email || '',
@@ -31,9 +21,6 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
 
   const [preferences, setPreferences] = useState({
     theme: initialData?.preferences?.theme === 'dark',
-    compactDensity: initialData?.preferences?.compactDensity || false,
-    liveForex: initialData?.preferences?.liveForex !== false,
-    acousticFeedback: initialData?.preferences?.acousticFeedback !== false
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -73,10 +60,7 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
         },
         body: JSON.stringify({
           ...formData,
-          theme: preferences.theme ? 'dark' : 'light',
-          compactDensity: preferences.compactDensity,
-          liveForex: preferences.liveForex,
-          acousticFeedback: preferences.acousticFeedback
+          theme: preferences.theme ? 'dark' : 'light'
         })
       });
       if (res.ok) {
@@ -93,36 +77,9 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
   return (
     <div className="flex flex-col gap-6 h-full pb-10">
       
-      {/* Top Nav */}
-      <div className="flex items-center gap-8 border-b border-white/10 pb-4 mb-2 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const isActive = tab === activeTab;
-          const isPro = tab === 'Billing & Membership';
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`text-sm font-bold whitespace-nowrap transition-colors relative flex items-center gap-2 ${
-                isActive ? 'text-white' : 'text-white/40 hover:text-white/80'
-              }`}
-            >
-              {tab}
-              {isPro && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1a2e22] text-[#b2f5d1] border border-[#b2f5d1]/20">
-                  PRO
-                </span>
-              )}
-              {isActive && (
-                <div className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-[#b2f5d1] rounded-t-full shadow-[0_-2px_10px_rgba(178,245,209,0.5)]" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
       <div>
         <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Settings & Preferences</h1>
-        <p className="text-white/50 text-sm">Manage your personal credentials, digital ledger behaviors, real-time conversion engine, and session safety parameters across your devices.</p>
+        <p className="text-white/50 text-sm">Manage your personal credentials, digital ledger behaviors, and interface theme.</p>
       </div>
 
       {/* Main Settings Card */}
@@ -146,7 +103,7 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
                   PRO MEMBER
                 </span>
               </div>
-              <p className="text-xs text-white/40 font-medium">Primary Ledger Holder • Last synced 2 mins ago</p>
+              <p className="text-xs text-white/40 font-medium">Primary Ledger Holder</p>
             </div>
           </div>
           
@@ -239,14 +196,14 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
       <div className="bg-[#121214] border border-white/10 rounded-3xl p-8 flex flex-col gap-8">
         <div>
           <h3 className="text-base font-bold text-white tracking-tight">Display & Visual Ergonomics</h3>
-          <p className="text-xs text-white/50 mt-1">Customize your interface theme and real-time ledger telemetry.</p>
+          <p className="text-xs text-white/50 mt-1">Customize your interface theme.</p>
         </div>
 
         <div className="flex flex-col gap-6">
           
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-sm font-bold text-white mb-0.5">Serene Dark Pulse Theme</h4>
+              <h4 className="text-sm font-bold text-white mb-0.5">Dark Mode</h4>
               <p className="text-xs text-white/40">High contrast obsidian canvas optimized for late night expense tracking & battery efficiency.</p>
             </div>
             <button 
@@ -254,45 +211,6 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
               className={`w-12 h-6 rounded-full transition-colors relative ${preferences.theme ? 'bg-[#b2f5d1]' : 'bg-white/10'}`}
             >
               <div className={`absolute top-1 w-4 h-4 rounded-full transition-transform ${preferences.theme ? 'bg-black translate-x-7' : 'bg-white translate-x-1'}`} />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-white mb-0.5">Compact Ledger Density</h4>
-              <p className="text-xs text-white/40">Display more transaction rows per screen by reducing spacing and hiding group avatars.</p>
-            </div>
-            <button 
-              onClick={() => handleToggle('compactDensity')}
-              className={`w-12 h-6 rounded-full transition-colors relative ${preferences.compactDensity ? 'bg-[#b2f5d1]' : 'bg-white/10'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full transition-transform ${preferences.compactDensity ? 'bg-black translate-x-7' : 'bg-white translate-x-1'}`} />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-white mb-0.5">Live Forex Market Conversion</h4>
-              <p className="text-xs text-white/40">Continuously convert cross-border transactions using real-time mid-market interbank exchange rates.</p>
-            </div>
-            <button 
-              onClick={() => handleToggle('liveForex')}
-              className={`w-12 h-6 rounded-full transition-colors relative ${preferences.liveForex ? 'bg-[#b2f5d1]' : 'bg-white/10'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full transition-transform ${preferences.liveForex ? 'bg-black translate-x-7' : 'bg-white translate-x-1'}`} />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-white mb-0.5">Acoustic Settlement Feedback</h4>
-              <p className="text-xs text-white/40">Plays an affirmative subtle haptic chime when a debt is marked as settled.</p>
-            </div>
-            <button 
-              onClick={() => handleToggle('acousticFeedback')}
-              className={`w-12 h-6 rounded-full transition-colors relative ${preferences.acousticFeedback ? 'bg-[#b2f5d1]' : 'bg-white/10'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full transition-transform ${preferences.acousticFeedback ? 'bg-black translate-x-7' : 'bg-white translate-x-1'}`} />
             </button>
           </div>
 

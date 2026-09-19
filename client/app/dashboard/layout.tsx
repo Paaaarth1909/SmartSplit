@@ -27,9 +27,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="w-56 border-r border-white/10 bg-[#0f0f0f] flex flex-col justify-between shrink-0">
         <div>
           {/* Logo / Header */}
-          <div className="h-16 flex flex-col justify-center px-5 border-b border-white/5 gap-0.5">
-            <span className="text-sm font-bold text-white tracking-wide">SmartSplit Pro</span>
-            <span className="text-[10px] font-semibold text-white/40 tracking-widest uppercase">Digital Command Center</span>
+          <div className="p-4 border-b border-white/5">
+            <Link href="/" className="flex items-center justify-between px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all cursor-pointer group shadow-sm">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-bold text-white tracking-wide group-hover:text-[#b2f5d1] transition-colors">SmartSplit Pro</span>
+                <span className="text-[9px] font-semibold text-white/40 tracking-widest uppercase">Go to Landing Page</span>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#b2f5d1]/20 transition-colors">
+                <svg className="w-3 h-3 text-white/50 group-hover:text-[#b2f5d1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </div>
+            </Link>
           </div>
 
           <div className="p-4">
