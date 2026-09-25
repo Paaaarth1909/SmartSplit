@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/nextjs';
+
 import { X, Search, UserPlus, Check, Loader2 } from 'lucide-react';
 import { Group } from './types';
 
@@ -21,7 +21,7 @@ interface Props {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
 
 export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: Props) {
-  const { getToken } = useAuth();
+  const getToken = async () => 'mock-token';
   
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(true);

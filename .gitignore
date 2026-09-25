@@ -13,3 +13,4 @@ out/
 .env.local
 .env*.local
 *.env
+.clerk 

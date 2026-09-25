@@ -1,10 +1,9 @@
 import React from 'react';
-import { auth } from '@clerk/nextjs/server';
+
 import GroupsList from './GroupsList';
 
 export default async function GroupsPage() {
-  const { getToken } = await auth();
-  const token = await getToken();
+  const token = 'mock-token';
 
   let groupsData = [];
 

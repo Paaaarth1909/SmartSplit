@@ -1,12 +1,11 @@
 import React from 'react';
-import { auth, currentUser } from '@clerk/nextjs/server';
+
 import GroupDetailsView from './GroupDetailsView';
 
 export default async function GroupDetailsPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const { getToken } = await auth();
-  const token = await getToken();
-  const user = await currentUser();
+  const token = 'mock-token';
+  const user = null as any;
   
   const userId = user?.id || '';
   const userName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Member';

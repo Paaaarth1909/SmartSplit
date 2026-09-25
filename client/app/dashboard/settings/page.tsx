@@ -1,10 +1,9 @@
 import React from 'react';
-import { auth } from '@clerk/nextjs/server';
+
 import SettingsView from './SettingsView';
 
 export default async function SettingsPage() {
-  const { getToken } = await auth();
-  const token = await getToken();
+  const token = 'mock-token';
   
   let userData = null;
 

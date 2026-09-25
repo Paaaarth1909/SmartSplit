@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useMotionValueEvent, useTransform } from 'framer-motion';
-import { useAuth, SignInButton, UserButton } from '@clerk/nextjs';
+
 import Link from 'next/link';
 import { LiquidButton } from '../ui/button';
 import { Frame } from 'lucide-react';
 
 export default function Navbar() {
-  const { isSignedIn } = useAuth();
+  const isSignedIn = true;
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -56,29 +56,14 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            {!isSignedIn ? (
-              <>
-                <SignInButton mode="modal">
-                  <button className="text-sm font-medium text-white/60 hover:text-white transition-colors hidden sm:block">
-                    Log In
-                  </button>
-                </SignInButton>
-                <SignInButton mode="modal">
-                  <LiquidButton className={`text-white bg-white/10 ${isScrolled ? 'h-8 px-4 text-xs' : ''}`} variant="default" size="default">
-                    Get Started Free
-                  </LiquidButton>
-                </SignInButton>
-              </>
-            ) : (
               <>
                 <Link href="/dashboard" className="mr-4">
                   <LiquidButton className={`text-white bg-white/10 ${isScrolled ? 'h-8 px-4 text-xs' : ''}`} variant="default" size="default">
                     Dashboard
                   </LiquidButton>
                 </Link>
-                <UserButton appearance={{ elements: { avatarBox: isScrolled ? "w-6 h-6" : "w-8 h-8" } }} />
+                <div className={`rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs ${isScrolled ? "w-6 h-6" : "w-8 h-8"}`}>U</div>
               </>
-            )}
           </div>
         </div>
       </motion.nav>

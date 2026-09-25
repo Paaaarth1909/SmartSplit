@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
-import { useAuth } from '@clerk/nextjs';
+
 
 interface Props {
   onClose: () => void;
@@ -17,7 +17,7 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onGroupCreated, apiUrl }) 
   const [error, setError] = useState('');
   const [friends, setFriends] = useState<any[]>([]);
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
-  const { getToken } = useAuth();
+  const getToken = async () => 'mock-token';
 
   useEffect(() => {
     const loadFriends = async () => {

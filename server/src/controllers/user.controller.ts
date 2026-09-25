@@ -5,7 +5,7 @@ import { Expense } from "../models/Expense.js";
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { fullName, preferredName, email, phone, avatar, clerkId } = req.body;
+    const { fullName, preferredName, email, phone, avatar } = req.body;
 
     if (!fullName || !email) {
       return res.status(400).json({ error: "Full name and email are required" });
@@ -17,7 +17,6 @@ export const createUser = async (req: Request, res: Response) => {
     }
 
     const user = await User.create({
-      clerkId: clerkId || "",
       fullName,
       preferredName: preferredName || fullName.split(" ")[0],
       email,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useAuth } from '@clerk/nextjs';
+
 import {
   X,
   ArrowRight,
@@ -39,7 +39,7 @@ const CATEGORIES = [
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
 
 const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) => {
-  const { getToken } = useAuth();
+  const getToken = async () => 'mock-token';
   
   // ── Step management ────────────────────────────────────────────
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0); // 0 = Smart Input

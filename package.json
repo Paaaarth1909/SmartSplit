@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "svix": "^2.5.0"
+  }
+}

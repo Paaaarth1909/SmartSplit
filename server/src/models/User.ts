@@ -1,77 +1,98 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export interface ILinkedAccount {
-  username: string;
-  connected: boolean;
-}
-
 export interface IUser extends Document {
-  clerkId?: string;
+
   fullName: string;
-  preferredName: string;
   email: string;
-  phone: string;
-  isPhoneVerified: boolean;
-  avatar: string;
+  phone?: string;
+  avatar?: string;
+
   linkedAccounts: {
-    venmo: ILinkedAccount;
-    cashApp: ILinkedAccount;
-    paypal: ILinkedAccount;
-    upi: ILinkedAccount;
+    venmo?: string;
+    cashApp?: string;
+    paypal?: string;
+    upi?: string;
   };
+
   security: {
-    twoFactorEnabled: boolean;
-    passwordLastChangedAt: Date;
+    twoFactorEnabled?: boolean;
   };
+
   preferences: {
-    currency: string;
-    aiProfileOptimized: boolean;
-    theme: string;
-    compactDensity: boolean;
-    liveForex: boolean;
-    acousticFeedback: boolean;
+    currency?: string;
+    theme?: string;
+    acousticFeedback?: boolean;
   };
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-const LinkedAccountSchema = new Schema<ILinkedAccount>(
+const userSchema = new Schema<IUser>(
   {
-    username: { type: String, default: "", trim: true },
-    connected: { type: Boolean, default: false }
-  },
-  { _id: false }
-);
 
-const UserSchema = new Schema<IUser>(
-  {
-    clerkId: { type: String, default: "", index: true },
-    fullName: { type: String, required: true, trim: true },
-    preferredName: { type: String, default: "", trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    phone: { type: String, default: "", trim: true },
-    isPhoneVerified: { type: Boolean, default: false },
-    avatar: { type: String, default: "" },
+
+    fullName: {
+      type: String,
+      default: "",
+    },
+
+    email: {
+      type: String,
+      required: true,
+    },
+
+    phone: {
+      type: String,
+      default: "",
+    },
+
+    avatar: {
+      type: String,
+      default: "",
+    },
+
     linkedAccounts: {
-      venmo: { type: LinkedAccountSchema, default: () => ({ username: "", connected: false }) },
-      cashApp: { type: LinkedAccountSchema, default: () => ({ username: "", connected: false }) },
-      paypal: { type: LinkedAccountSchema, default: () => ({ username: "", connected: false }) },
-      upi: { type: LinkedAccountSchema, default: () => ({ username: "", connected: false }) }
+      venmo: {
+        type: String,
+        default: "",
+      },
+      cashApp: {
+        type: String,
+        default: "",
+      },
+      paypal: {
+        type: String,
+        default: "",
+      },
+      upi: {
+        type: String,
+        default: "",
+      },
     },
+
     security: {
-      twoFactorEnabled: { type: Boolean, default: false },
-      passwordLastChangedAt: { type: Date, default: Date.now }
+      twoFactorEnabled: {
+        type: Boolean,
+        default: false,
+      },
     },
+
     preferences: {
-      currency: { type: String, default: "USD" },
-      aiProfileOptimized: { type: Boolean, default: true },
-      theme: { type: String, default: "dark" },
-      compactDensity: { type: Boolean, default: false },
-      liveForex: { type: Boolean, default: true },
-      acousticFeedback: { type: Boolean, default: true }
-    }
+      currency: {
+        type: String,
+        default: "INR",
+      },
+      theme: {
+        type: String,
+        default: "system",
+      },
+      acousticFeedback: {
+        type: Boolean,
+        default: true,
+      },
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export const User = mongoose.model<IUser>("User", UserSchema);
+export const User = mongoose.model<IUser>("User", userSchema);

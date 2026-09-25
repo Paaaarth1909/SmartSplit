@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import { Home, Plane, Utensils, LayoutGrid, List, Plus, Settings } from 'lucide-react';
 import CreateGroupModal from '@/components/CreateGroupModal';
-import { useAuth } from '@clerk/nextjs';
+
 import Link from 'next/link';
 
 export default function GroupsList({ initialGroups }: { initialGroups: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const { getToken } = useAuth();
+
 
   const getCategoryIcon = (category: string) => {
     switch (category.toUpperCase()) {

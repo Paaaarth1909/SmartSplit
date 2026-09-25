@@ -1,10 +1,9 @@
 import React from 'react';
-import { auth } from '@clerk/nextjs/server';
+
 import FriendsView from './FriendsView';
 
 export default async function FriendsPage() {
-  const { getToken } = await auth();
-  const token = await getToken();
+  const token = 'mock-token';
 
   let initialFriends = [];
 

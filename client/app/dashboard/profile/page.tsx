@@ -1,12 +1,11 @@
 import React from 'react';
-import { auth, currentUser } from '@clerk/nextjs/server';
+
 import { Utensils, Car, Film, Plane, Home, Bell, Receipt, Users } from 'lucide-react';
 import Image from 'next/image';
 
 export default async function DashboardPage() {
-  const user = await currentUser();
-  const { getToken } = await auth();
-  const token = await getToken();
+  const user = null as any;
+  const token = 'mock-token';
 
   // Fallback in case there is no user
   const firstName = user?.firstName || 'User';

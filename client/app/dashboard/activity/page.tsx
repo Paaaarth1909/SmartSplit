@@ -1,10 +1,9 @@
 import React from 'react';
-import { auth } from '@clerk/nextjs/server';
+
 import RecentActivityView from './RecentActivityView';
 
 export default async function RecentActivityPage() {
-  const { getToken } = await auth();
-  const token = await getToken();
+  const token = 'mock-token';
   
   let activityData = null;
 

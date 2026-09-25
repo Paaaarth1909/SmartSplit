@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Clock, Users, UserPlus, Settings, LogOut, Plus, Bell, HelpCircle } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <LogOut className="w-4 h-4" /> 
             <span className="flex-1 text-left">Logout</span>
             <div className="scale-[0.65] origin-right">
-              <UserButton />
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">U</div>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </svg> Quick Split
             </button>
             <div className="pl-2 border-l border-white/10">
-              <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 rounded-full border border-white/10" } }} />
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">U</div>
             </div>
           </div>
         </header>

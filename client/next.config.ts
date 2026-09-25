@@ -2,12 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'img.clerk.com',
-      },
-    ],
+    remotePatterns: [],
   },
   webpack(config) {
     // Add rule for WASM to be supported in Next.js
