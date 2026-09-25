@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Home, Plane, Utensils, LayoutGrid, List, Plus, Settings } from 'lucide-react';
+import { Home, Plane, Utensils, LayoutGrid, List, Plus, Settings, Link as LinkIcon } from 'lucide-react';
 import CreateGroupModal from '@/components/CreateGroupModal';
+import JoinGroupModal from '@/components/JoinGroupModal';
 
 import Link from 'next/link';
 
 export default function GroupsList({ initialGroups }: { initialGroups: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
 
@@ -112,6 +114,17 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
           <p className="text-sm font-semibold text-white/60 group-hover:text-white transition-colors">Create New Group</p>
         </button>
 
+        {/* Join Group Card */}
+        <button 
+          onClick={() => setIsJoinModalOpen(true)}
+          className="border-2 border-dashed border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px] hover:border-[#b2f5d1]/40 hover:bg-[#b2f5d1]/5 transition-all group"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform group-hover:bg-[#b2f5d1]/20">
+            <LinkIcon className="w-6 h-6 text-white/60 group-hover:text-[#b2f5d1] transition-colors" />
+          </div>
+          <p className="text-sm font-semibold text-white/60 group-hover:text-[#b2f5d1] transition-colors">Join Group via Code</p>
+        </button>
+
       </div>
 
       {isModalOpen && (
@@ -119,6 +132,13 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
           onClose={() => setIsModalOpen(false)} 
           onGroupCreated={() => window.location.reload()} 
           apiUrl="http://127.0.0.1:5050/api/groups" 
+        />
+      )}
+      
+      {isJoinModalOpen && (
+        <JoinGroupModal 
+          onClose={() => setIsJoinModalOpen(false)} 
+          onJoined={() => window.location.reload()} 
         />
       )}
     </div>

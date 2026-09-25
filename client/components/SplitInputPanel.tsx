@@ -47,6 +47,19 @@ const SplitInputPanel: React.FC<Props> = ({
     setParticipants(initial);
     setPreview([]);
     setPreviewError('');
+
+    // Emit these initial values to the parent immediately!
+    const payload = initial.map((p) => {
+      switch (splitType) {
+        case 'exact':
+          return { userId: p.userId, amount: p.amount };
+        case 'shares':
+          return { userId: p.userId, shares: p.shares };
+        case 'percentage':
+          return { userId: p.userId, percentage: p.percentage };
+      }
+    });
+    onChange(payload);
   }, [members, splitType]);
 
   // ── Emit changes to parent ─────────────────────────────────────

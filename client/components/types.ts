@@ -9,6 +9,7 @@ export interface Group {
   _id: string;
   name: string;
   description: string;
+  inviteCode?: string;
   members: Member[];
   createdAt: string;
 }

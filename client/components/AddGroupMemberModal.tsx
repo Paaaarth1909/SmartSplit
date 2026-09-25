@@ -18,7 +18,7 @@ interface Props {
   onMembersAdded: () => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5050/api';
 
 export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: Props) {
   const getToken = async () => 'mock-token';
@@ -137,12 +137,31 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
           </div>
         )}
 
-        <div className="p-6">
+        <div className="px-6 pt-6">
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center mb-4">
+            <span className="text-sm text-white/50 mb-1">Group Invite Code</span>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-mono font-bold tracking-widest text-[#b2f5d1]">
+                {group.inviteCode || 'N/A'}
+              </span>
+              <button 
+                className="text-white/40 hover:text-white transition-colors"
+                onClick={() => {
+                  if (group.inviteCode) navigator.clipboard.writeText(group.inviteCode);
+                }}
+                title="Copy to clipboard"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+            <p className="text-xs text-white/40 mt-2 text-center">Share this code with friends so they can join automatically.</p>
+          </div>
+          
           <div className="relative mb-6">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
             <input 
               type="text" 
-              placeholder="Search friends..." 
+              placeholder="Or add friends from network..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#1a1a1c] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#b2f5d1]/50 transition-colors"
