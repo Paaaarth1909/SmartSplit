@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { X, Search, Loader2 } from 'lucide-react';
-
-const API_BASE = 'http://127.0.0.1:5050/api';
+import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 export default function JoinGroupModal({ onClose, onJoined }: { onClose: () => void, onJoined: () => void }) {
   const [inviteCode, setInviteCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const getToken = async () => 'mock-token';
 
   const handleJoin = async () => {
     if (!inviteCode.trim()) return;
@@ -15,13 +13,9 @@ export default function JoinGroupModal({ onClose, onJoined }: { onClose: () => v
     setError('');
 
     try {
-      const token = await getToken();
       const res = await fetch(`${API_BASE}/groups/join`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ inviteCode: inviteCode.trim().toUpperCase() })
       });
 

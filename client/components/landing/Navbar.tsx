@@ -6,9 +6,10 @@ import { motion, useScroll, useMotionValueEvent, useTransform } from 'framer-mot
 import Link from 'next/link';
 import { LiquidButton } from '../ui/button';
 import { Frame } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
-  const isSignedIn = true;
+  const { user, isAuthenticated } = useAuth();
   const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -19,6 +20,10 @@ export default function Navbar() {
       setIsScrolled(false);
     }
   });
+
+  const userInitial = user?.fullName
+    ? user.fullName.charAt(0).toUpperCase()
+    : "U";
 
   return (
     <>
@@ -43,10 +48,10 @@ export default function Navbar() {
 
         {/* Content */}
         <div className={`relative z-10 w-full flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4' : 'px-6'}`}>
-          <div className="flex items-center gap-2 cursor-pointer">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer">
             <Frame className="w-5 h-5 text-white" />
             <span className="text-lg font-bold tracking-tight text-white">SmartSplit <span className="text-[#b2f5d1]">Pro</span></span>
-          </div>
+          </Link>
 
           <div className={`hidden md:flex items-center text-sm font-medium text-white/60 transition-all duration-500 ${isScrolled ? 'gap-6 text-xs' : 'gap-8 text-sm'}`}>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -55,15 +60,32 @@ export default function Navbar() {
             <a href="#integrations" className="hover:text-white transition-colors">Integrations</a>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
               <>
-                <Link href="/dashboard" className="mr-4">
+                <Link href="/dashboard">
                   <LiquidButton className={`text-white bg-white/10 ${isScrolled ? 'h-8 px-4 text-xs' : ''}`} variant="default" size="default">
                     Dashboard
                   </LiquidButton>
                 </Link>
-                <div className={`rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs ${isScrolled ? "w-6 h-6" : "w-8 h-8"}`}>U</div>
+                <Link href="/dashboard/profile">
+                  <div className={`rounded-full bg-[#27ff9a] text-black font-bold text-xs flex items-center justify-center cursor-pointer shadow-[0_0_10px_rgba(39,255,154,0.3)] ${isScrolled ? "w-7 h-7" : "w-8 h-8"}`}>
+                    {userInitial}
+                  </div>
+                </Link>
               </>
+            ) : (
+              <>
+                <Link href="/login" className="text-xs md:text-sm font-medium text-white/70 hover:text-white transition-colors px-3 py-1.5">
+                  Sign In
+                </Link>
+                <Link href="/register">
+                  <LiquidButton className={`text-black bg-[#27ff9a] hover:bg-[#1fe388] font-bold ${isScrolled ? 'h-8 px-4 text-xs' : ''}`} variant="default" size="default">
+                    Sign Up
+                  </LiquidButton>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </motion.nav>

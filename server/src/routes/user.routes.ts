@@ -10,7 +10,11 @@ import {
   getFinancialOverview,
   getRecentActivity,
   getCurrentUser,
-  updateCurrentUser
+  updateCurrentUser,
+  searchUsers,
+  getFriends,
+  addFriend,
+  removeFriend
 } from "../controllers/user.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 
@@ -21,8 +25,14 @@ router.get("/me/dashboard", requireAuth, getDashboardData);
 router.get("/me/groups", requireAuth, getUserGroups);
 router.get("/me/financial-overview", requireAuth, getFinancialOverview);
 router.get("/me/recent-activity", requireAuth, getRecentActivity);
+router.get("/me/friends", requireAuth, getFriends);
 router.get("/me", requireAuth, getCurrentUser);
 router.put("/me", requireAuth, updateCurrentUser);
+
+// Friends routes
+router.get("/search", requireAuth, searchUsers);
+router.post("/friends/:friendId", requireAuth, addFriend);
+router.delete("/friends/:friendId", requireAuth, removeFriend);
 router.get("/:id", getUserProfile);
 router.put("/:id", updateUserProfile);
 router.put("/:id/linked-accounts", updateLinkedAccounts);

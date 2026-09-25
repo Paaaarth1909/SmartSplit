@@ -1,13 +1,21 @@
 'use client';
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Clock, Users, UserPlus, Settings, LogOut, Plus, Bell, HelpCircle } from "lucide-react";
-
+import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const getLinkClass = (path: string) => {
     const isActive = pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
@@ -20,6 +28,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const isActive = pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
     return isActive ? "w-4 h-4 text-white/70" : "w-4 h-4";
   };
+
+  const userInitial = user?.fullName
+    ? user.fullName.charAt(0).toUpperCase()
+    : "U";
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
@@ -72,13 +84,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard/settings" className={getLinkClass("/dashboard/settings")}>
             <Settings className={getIconClass("/dashboard/settings")} /> Settings
           </Link>
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/60 text-sm font-medium">
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/60 hover:text-red-400 hover:bg-white/5 text-sm font-medium transition-colors w-full cursor-pointer text-left"
+          >
             <LogOut className="w-4 h-4" /> 
             <span className="flex-1 text-left">Logout</span>
             <div className="scale-[0.65] origin-right">
-              <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">U</div>
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">
+                {userInitial}
+              </div>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -90,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link href="/dashboard" className="text-sm font-bold text-white border-b-2 border-[#b2f5d1] pb-5 translate-y-[10px]">Overview</Link>
             <Link href="#" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Settlements</Link>
             <Link href="#" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Reports</Link>
-            <Link href="#" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Settings</Link>
+            <Link href="/dashboard/settings" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Settings</Link>
           </div>
           
           <div className="flex items-center gap-4">
@@ -104,13 +121,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:border-white/20 transition-all">
               <HelpCircle className="w-3.5 h-3.5" />
             </button>
-            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-xs font-bold text-white transition-all flex items-center gap-1.5">
+            <Link href="/dashboard/expenses/new" className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-xs font-bold text-white transition-all flex items-center gap-1.5">
               <svg className="w-3 h-3 text-[#b2f5d1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg> Quick Split
-            </button>
+            </Link>
             <div className="pl-2 border-l border-white/10">
-              <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">U</div>
+              <Link href="/dashboard/profile" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-[#27ff9a]/40 flex items-center justify-center text-xs font-bold text-[#27ff9a] hover:border-[#27ff9a] transition-colors">
+                  {userInitial}
+                </div>
+              </Link>
             </div>
           </div>
         </header>

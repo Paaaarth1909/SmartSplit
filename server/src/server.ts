@@ -5,6 +5,8 @@ import path from "path";
 import cors from "cors";
 
 import { connectDB } from "./config/db.js";
+import { ensureAllGroupsHaveInviteCodes } from "./models/Group.js";
+import authRoutes from "./routes/auth.routes.js";
 import groupRoutes from "./routes/group.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import expenseRoutes from "./routes/expense.routes.js";
@@ -24,8 +26,7 @@ app.use(cors());
 
 app.use(express.json());
 
-
-
+app.use("/api/auth", authRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/expenses", expenseRoutes);
@@ -45,6 +46,7 @@ initSocket(httpServer);
 
 const startServer = async () => {
   await connectDB();
+  await ensureAllGroupsHaveInviteCodes();
   httpServer.listen(PORT, () => {
     console.log(`Server & WebSockets listening on http://localhost:${PORT}`);
   });

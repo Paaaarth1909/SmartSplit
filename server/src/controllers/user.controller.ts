@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { User } from "../models/User.js";
-import { Group } from "../models/Group.js";
+import { Group, ensureGroupInviteCode } from "../models/Group.js";
 import { Expense } from "../models/Expense.js";
 
 export const createUser = async (req: Request, res: Response) => {
@@ -93,10 +93,10 @@ export const updateLinkedAccounts = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (venmo) user.linkedAccounts.venmo = { ...user.linkedAccounts.venmo, ...venmo };
-    if (cashApp) user.linkedAccounts.cashApp = { ...user.linkedAccounts.cashApp, ...cashApp };
-    if (paypal) user.linkedAccounts.paypal = { ...user.linkedAccounts.paypal, ...paypal };
-    if (upi) user.linkedAccounts.upi = { ...user.linkedAccounts.upi, ...upi };
+    if (venmo !== undefined) user.linkedAccounts.venmo = venmo;
+    if (cashApp !== undefined) user.linkedAccounts.cashApp = cashApp;
+    if (paypal !== undefined) user.linkedAccounts.paypal = paypal;
+    if (upi !== undefined) user.linkedAccounts.upi = upi;
 
     await user.save();
     return res.json({ success: true, data: user.linkedAccounts });
@@ -245,6 +245,12 @@ export const getUserGroups = async (req: Request, res: Response) => {
       ]
     });
 
+    for (const group of userGroups) {
+      if (!group.inviteCode) {
+        await ensureGroupInviteCode(group);
+      }
+    }
+
     const groupIds = userGroups.map(g => g._id);
     const allExpenses = await Expense.find({ group: { $in: groupIds } });
 
@@ -279,6 +285,7 @@ export const getUserGroups = async (req: Request, res: Response) => {
         name: group.name,
         category: (group as any).category || 'GENERAL',
         memberCount: group.members.length,
+        inviteCode: group.inviteCode,
         balance: Math.abs(netBalance),
         status,
         members: group.members.map(m => ({
@@ -578,5 +585,147 @@ export const updateCurrentUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Update current user error:", error);
     return res.status(500).json({ error: "Failed to update profile" });
+  }
+};
+
+// --- Friend Management ---
+
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const query = req.query.q as string;
+
+    if (!query || query.trim() === '') {
+      return res.json({ success: true, data: [] });
+    }
+
+    const currentUser = await User.findOne({ 
+      $or: [
+        { _id: userId },
+        { email: (req as any).user.email }
+      ]
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({ error: "Current user not found" });
+    }
+
+    const friendIds = currentUser.friends || [];
+
+    // Search for users whose email or name matches the query
+    const users = await User.find({
+      _id: { $ne: currentUser._id, $nin: friendIds },
+      $or: [
+        { fullName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
+      ]
+    })
+    .select('fullName email avatar _id')
+    .limit(10);
+
+    return res.json({ success: true, data: users });
+  } catch (error) {
+    console.error("Search users error:", error);
+    return res.status(500).json({ error: "Failed to search users" });
+  }
+};
+
+export const getFriends = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+
+    const user = await User.findOne({
+      $or: [
+        { _id: userId },
+        { email: userEmail }
+      ]
+    }).populate('friends', 'fullName email avatar _id');
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({ success: true, data: user.friends || [] });
+  } catch (error) {
+    console.error("Get friends error:", error);
+    return res.status(500).json({ error: "Failed to fetch friends" });
+  }
+};
+
+export const addFriend = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+    const { friendId } = req.params;
+
+    const currentUser = await User.findOne({
+      $or: [
+        { _id: userId },
+        { email: userEmail }
+      ]
+    });
+
+    if (!currentUser) return res.status(404).json({ error: "Current user not found" });
+
+    const targetUser = await User.findById(friendId);
+    if (!targetUser) return res.status(404).json({ error: "Target user not found" });
+
+    // Ensure friends arrays exist
+    if (!currentUser.friends) currentUser.friends = [];
+    if (!targetUser.friends) targetUser.friends = [];
+
+    // Mutually add
+    if (!currentUser.friends.includes(targetUser._id as any)) {
+      currentUser.friends.push(targetUser._id as any);
+      await currentUser.save();
+    }
+    
+    if (!targetUser.friends.includes(currentUser._id as any)) {
+      targetUser.friends.push(currentUser._id as any);
+      await targetUser.save();
+    }
+
+    return res.json({ success: true, message: "Friend added successfully" });
+  } catch (error) {
+    console.error("Add friend error:", error);
+    return res.status(500).json({ error: "Failed to add friend" });
+  }
+};
+
+export const removeFriend = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+    const { friendId } = req.params;
+
+    const currentUser = await User.findOne({
+      $or: [
+        { _id: userId },
+        { email: userEmail }
+      ]
+    });
+
+    if (!currentUser) return res.status(404).json({ error: "Current user not found" });
+
+    const targetUser = await User.findById(friendId);
+    
+    // Ensure friends arrays exist
+    if (!currentUser.friends) currentUser.friends = [];
+    if (targetUser && !targetUser.friends) targetUser.friends = [];
+
+    // Mutually remove
+    currentUser.friends = currentUser.friends.filter(id => id.toString() !== friendId);
+    await currentUser.save();
+
+    if (targetUser) {
+      targetUser.friends = (targetUser.friends || []).filter(id => id.toString() !== currentUser._id.toString());
+      await targetUser.save();
+    }
+
+    return res.json({ success: true, message: "Friend removed successfully" });
+  } catch (error) {
+    console.error("Remove friend error:", error);
+    return res.status(500).json({ error: "Failed to remove friend" });
   }
 };

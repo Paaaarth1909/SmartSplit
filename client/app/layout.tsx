@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'SmartSplit',
-  description: 'Smart expense splitting application',
+  title: 'SmartSplit Pro - Intelligent Expense Splitting & Debt Optimization',
+  description: 'Smart expense splitting application powered by AI and debt graph optimization',
 };
 
 export default function RootLayout({
@@ -14,8 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-[#0a0a0a] text-white">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
-

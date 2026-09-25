@@ -30,6 +30,7 @@ export default function GroupDetailsView({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { group, balances, settlements, distribution } = groupData;
@@ -119,6 +120,27 @@ export default function GroupDetailsView({
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight truncate">{group.name}</h1>
           </div>
+
+          {group.inviteCode && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-white/50">Invite Code:</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(group.inviteCode);
+                  setCopiedCode(true);
+                  setTimeout(() => setCopiedCode(false), 2000);
+                }}
+                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-mono font-bold text-[#27ff9a] tracking-wider transition-colors cursor-pointer flex items-center gap-1.5"
+                title="Click to copy invite code"
+              >
+                {group.inviteCode}
+                <span className="text-[10px] text-white/40 font-sans font-normal">
+                  {copiedCode ? "(copied!)" : "(copy)"}
+                </span>
+              </button>
+            </div>
+          )}
+
           <div className="flex -space-x-2 mt-4">
             {group.members.slice(0, 4).map((member: any, i: number) => (
               <div key={i} className="w-8 h-8 rounded-full bg-[#1a1a1c] border-2 border-[#0a0a0a] flex items-center justify-center text-xs text-white/50 font-bold z-10">

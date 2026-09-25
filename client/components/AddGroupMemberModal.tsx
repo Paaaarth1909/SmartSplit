@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-
-import { X, Search, UserPlus, Check, Loader2 } from 'lucide-react';
+import { X, Search, UserPlus, Check, Copy, Loader2, RefreshCw } from 'lucide-react';
 import { Group } from './types';
 
 interface Friend {
@@ -21,18 +20,55 @@ interface Props {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5050/api';
 
 export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: Props) {
-  const getToken = async () => 'mock-token';
+  const groupId = group._id || (group as any).id;
+  const getToken = async () => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('smartsplit_auth_token');
+      if (token) return token;
+    }
+    return 'mock-token';
+  };
   
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
   
+  const [inviteCode, setInviteCode] = useState<string>(group.inviteCode || '');
+  const [loadingCode, setLoadingCode] = useState<boolean>(!group.inviteCode);
+  const [copied, setCopied] = useState<boolean>(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // 1. Fetch friends
+  // 1. Ensure invite code is loaded / generated
+  useEffect(() => {
+    const fetchCode = async () => {
+      if (inviteCode) return;
+      try {
+        setLoadingCode(true);
+        const token = await getToken();
+        const res = await fetch(`${API_BASE}/groups/${groupId}/invite-code`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.inviteCode) {
+            setInviteCode(data.inviteCode);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch invite code', err);
+      } finally {
+        setLoadingCode(false);
+      }
+    };
+
+    fetchCode();
+  }, [groupId, inviteCode]);
+
+  // 2. Fetch friends
   useEffect(() => {
     const fetchFriends = async () => {
       try {
@@ -43,7 +79,7 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
         if (res.ok) {
           const json = await res.json();
           // Filter out friends that are already in this group
-          const existingEmails = new Set(group.members.map(m => m.email));
+          const existingEmails = new Set((group.members || []).map(m => m.email));
           const eligibleFriends = (json.data || []).filter((f: Friend) => !existingEmails.has(f.email));
           setFriends(eligibleFriends);
         }
@@ -56,7 +92,15 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
     fetchFriends();
   }, [group, getToken]);
 
-  // 2. Handle submit
+  const handleCopyCode = () => {
+    const code = inviteCode || group.inviteCode;
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // 3. Handle submit
   const handleSubmit = async () => {
     if (selectedFriends.size === 0) return;
     
@@ -66,18 +110,17 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
     try {
       const token = await getToken();
       
-      // We will loop and hit POST /api/groups/:id/members for each selected friend
       const friendsToAdd = friends.filter(f => selectedFriends.has(f._id));
       
       for (const friend of friendsToAdd) {
         const payload = {
           name: friend.fullName,
           email: friend.email,
-          phone: '', // Optional
+          phone: '',
           role: 'member'
         };
         
-        const res = await fetch(`${API_BASE}/groups/${group._id}/members`, {
+        const res = await fetch(`${API_BASE}/groups/${groupId}/members`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -138,23 +181,36 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
         )}
 
         <div className="px-6 pt-6">
-          <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center mb-4">
-            <span className="text-sm text-white/50 mb-1">Group Invite Code</span>
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center mb-4 transition-colors">
+            <span className="text-xs uppercase tracking-wider text-white/50 mb-1 font-semibold">Group Invite Code</span>
             <div className="flex items-center gap-3">
               <span className="text-2xl font-mono font-bold tracking-widest text-[#b2f5d1]">
-                {group.inviteCode || 'N/A'}
+                {loadingCode ? (
+                  <span className="text-sm font-sans font-medium text-white/40 flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-[#b2f5d1]" /> Generating...
+                  </span>
+                ) : (
+                  inviteCode || group.inviteCode || 'N/A'
+                )}
               </span>
               <button 
-                className="text-white/40 hover:text-white transition-colors"
-                onClick={() => {
-                  if (group.inviteCode) navigator.clipboard.writeText(group.inviteCode);
-                }}
+                className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+                onClick={handleCopyCode}
+                disabled={(!inviteCode && !group.inviteCode) || loadingCode}
                 title="Copy to clipboard"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                {copied ? (
+                  <Check size={18} className="text-[#b2f5d1]" />
+                ) : (
+                  <Copy size={18} />
+                )}
               </button>
             </div>
-            <p className="text-xs text-white/40 mt-2 text-center">Share this code with friends so they can join automatically.</p>
+            {copied ? (
+              <span className="text-xs text-[#b2f5d1] mt-2 font-medium">Copied to clipboard!</span>
+            ) : (
+              <p className="text-xs text-white/40 mt-2 text-center">Share this code with friends so they can join automatically.</p>
+            )}
           </div>
           
           <div className="relative mb-6">
