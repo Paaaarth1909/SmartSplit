@@ -1,12 +1,12 @@
-'use client';
-
 import React, { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Send, Paperclip, Plus, MessageSquare, X } from 'lucide-react';
+import { Send, Paperclip, Plus, MessageSquare, X, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import CalculatingLoader from '../../../../components/CalculatingLoader';
 import AddExpenseModal from '../../../../components/AddExpenseModal';
 import AddGroupMemberModal from '../../../../components/AddGroupMemberModal';
+import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 interface GroupDetailsViewProps {
   groupData: any;
@@ -23,6 +23,7 @@ export default function GroupDetailsView({
   currentUserId,
   currentUserName
 }: GroupDetailsViewProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<any[]>(initialMessages);
   const [chatInput, setChatInput] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
@@ -31,6 +32,9 @@ export default function GroupDetailsView({
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { group, balances, settlements, distribution } = groupData;
@@ -78,6 +82,28 @@ export default function GroupDetailsView({
   const getPercentage = (val: number, total: number) => {
     if (total === 0) return 0;
     return Math.round((val / total) * 100);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`${API_BASE}/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        setIsDeleteModalOpen(false);
+        router.push('/dashboard/groups');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setDeleteError(data.error || 'Failed to delete group');
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'An error occurred while deleting the group');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const totalOwedAmount = balances.filter((b: any) => b.netAmount > 0).reduce((acc: number, b: any) => acc + b.netAmount, 0);
@@ -148,6 +174,17 @@ export default function GroupDetailsView({
               </div>
             ))}
           </div>
+
+          <button
+            onClick={() => {
+              setDeleteError('');
+              setIsDeleteModalOpen(true);
+            }}
+            className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-all cursor-pointer w-fit"
+            title="Delete this group"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete Group
+          </button>
         </div>
 
         <div className="mt-4">
@@ -368,10 +405,66 @@ export default function GroupDetailsView({
       ) : (
         <button 
           onClick={() => setIsChatOpen(true)}
-          className="absolute bottom-8 right-8 w-14 h-14 bg-[#b2f5d1] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(178,245,209,0.3)] hover:scale-105 hover:bg-[#9de4c2] transition-all z-50"
+          className="absolute bottom-8 right-8 w-14 h-14 bg-[#b2f5d1] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(178,245,209,0.3)] hover:scale-105 hover:bg-[#9de4c2] transition-all z-50 cursor-pointer"
         >
           <MessageSquare className="w-6 h-6" />
         </button>
+      )}
+
+      {/* Delete Group Modal */}
+      {isDeleteModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
+        >
+          <div 
+            className="w-full max-w-md bg-[#121214] border border-red-500/20 rounded-2xl shadow-2xl overflow-hidden p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4 text-red-400">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Delete Group</h3>
+                <p className="text-xs text-white/50">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-white/70 mb-6">
+              Are you sure you want to permanently delete <strong className="text-white">"{group.name}"</strong>? All expenses, split calculations, and chat messages for this group will be deleted.
+            </p>
+
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                className="px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 hover:text-white text-sm font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors shadow-[0_0_15px_rgba(239,68,68,0.3)] flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
+                ) : (
+                  <><Trash2 className="w-4 h-4" /> Delete Group</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

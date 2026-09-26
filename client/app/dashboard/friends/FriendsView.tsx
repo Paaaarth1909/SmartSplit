@@ -1,14 +1,13 @@
-'use client';
-
 import React, { useState } from 'react';
 import { Search, UserPlus, UserMinus, UserCircle2, Loader2 } from 'lucide-react';
+import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 interface FriendsViewProps {
   initialFriends: any[];
-  token: string | null;
+  token?: string | null;
 }
 
-export default function FriendsView({ initialFriends, token }: FriendsViewProps) {
+export default function FriendsView({ initialFriends }: FriendsViewProps) {
   const [friends, setFriends] = useState(initialFriends);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -24,8 +23,8 @@ export default function FriendsView({ initialFriends, token }: FriendsViewProps)
 
     setIsSearching(true);
     try {
-      const res = await fetch(`http://127.0.0.1:5050/api/users/search?q=${encodeURIComponent(searchQuery)}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${API_BASE}/users/search?q=${encodeURIComponent(searchQuery)}`, {
+        headers: getAuthHeaders()
       });
       if (res.ok) {
         const data = await res.json();
@@ -40,15 +39,15 @@ export default function FriendsView({ initialFriends, token }: FriendsViewProps)
   const handleAddFriend = async (friendId: string, name: string) => {
     setLoadingActionId(friendId);
     try {
-      const res = await fetch(`http://127.0.0.1:5050/api/users/friends/${friendId}`, {
+      const res = await fetch(`${API_BASE}/users/friends/${friendId}`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getAuthHeaders()
       });
       
       if (res.ok) {
         // Refresh friends list
-        const refreshRes = await fetch('http://127.0.0.1:5050/api/users/me/friends', {
-          headers: { Authorization: `Bearer ${token}` }
+        const refreshRes = await fetch(`${API_BASE}/users/me/friends`, {
+          headers: getAuthHeaders()
         });
         if (refreshRes.ok) {
           const data = await refreshRes.json();
@@ -66,9 +65,9 @@ export default function FriendsView({ initialFriends, token }: FriendsViewProps)
   const handleRemoveFriend = async (friendId: string) => {
     setLoadingActionId(friendId);
     try {
-      const res = await fetch(`http://127.0.0.1:5050/api/users/friends/${friendId}`, {
+      const res = await fetch(`${API_BASE}/users/friends/${friendId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getAuthHeaders()
       });
       
       if (res.ok) {

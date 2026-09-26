@@ -20,6 +20,7 @@ import {
 import { Group, SplitType } from './types';
 import SplitMethodSelector from './SplitMethodSelector';
 import SplitInputPanel from './SplitInputPanel';
+import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 interface Props {
   group: Group;
@@ -36,10 +37,7 @@ const CATEGORIES = [
   'General',
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api';
-
 const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) => {
-  const getToken = async () => 'mock-token';
   
   // ── Step management ────────────────────────────────────────────
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0); // 0 = Smart Input
@@ -146,13 +144,9 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
     setAiError('');
 
     try {
-      const token = await getToken();
       const res = await fetch(`${API_BASE}/ai/nlp`, {
         method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ prompt: nlpText }),
       });
 
@@ -174,7 +168,6 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
       setIsSubmitting(true);
       setError('');
       
-      const token = await getToken();
       const payload = {
         groupId: group._id,
         description,
@@ -189,10 +182,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
 
       const res = await fetch(`${API_BASE}/expenses`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
       

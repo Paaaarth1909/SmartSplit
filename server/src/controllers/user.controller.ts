@@ -40,8 +40,9 @@ export const getUserProfile = async (req: Request, res: Response) => {
 
     const totalGroups = await Group.countDocuments({
       $or: [
-        { "members.email": user.email },
-        { "members.phone": user.phone ? user.phone : "__NONE__" }
+        { createdBy: user._id.toString() },
+        { "members.email": { $regex: new RegExp(`^${user.email}$`, "i") } },
+        ...(user.phone ? [{ "members.phone": user.phone }] : [])
       ]
     });
 
@@ -137,8 +138,9 @@ export const getDashboardData = async (req: Request, res: Response) => {
 
     const userGroups = await Group.find({
       $or: [
-        { "members.email": userEmail },
-        { "members.phone": userPhone }
+        { createdBy: userId },
+        { "members.email": { $regex: new RegExp(`^${userEmail}$`, "i") } },
+        ...(userPhone && userPhone !== "__NONE__" ? [{ "members.phone": userPhone }] : [])
       ]
     });
 
@@ -240,10 +242,11 @@ export const getUserGroups = async (req: Request, res: Response) => {
 
     const userGroups = await Group.find({
       $or: [
-        { "members.email": userEmail },
-        { "members.phone": userPhone }
+        { createdBy: userId },
+        { "members.email": { $regex: new RegExp(`^${userEmail}$`, "i") } },
+        ...(userPhone && userPhone !== "__NONE__" ? [{ "members.phone": userPhone }] : [])
       ]
-    });
+    }).sort({ createdAt: -1 });
 
     for (const group of userGroups) {
       if (!group.inviteCode) {
@@ -313,8 +316,9 @@ export const getFinancialOverview = async (req: Request, res: Response) => {
 
     const userGroups = await Group.find({
       $or: [
-        { "members.email": userEmail },
-        { "members.phone": userPhone }
+        { createdBy: userId },
+        { "members.email": { $regex: new RegExp(`^${userEmail}$`, "i") } },
+        ...(userPhone && userPhone !== "__NONE__" ? [{ "members.phone": userPhone }] : [])
       ]
     });
 
@@ -405,8 +409,9 @@ export const getRecentActivity = async (req: Request, res: Response) => {
 
     const userGroups = await Group.find({
       $or: [
-        { "members.email": userEmail },
-        { "members.phone": userPhone }
+        { createdBy: userId },
+        { "members.email": { $regex: new RegExp(`^${userEmail}$`, "i") } },
+        ...(userPhone && userPhone !== "__NONE__" ? [{ "members.phone": userPhone }] : [])
       ]
     });
 
@@ -611,17 +616,20 @@ export const searchUsers = async (req: Request, res: Response) => {
     }
 
     const friendIds = currentUser.friends || [];
+    const includeFriends = req.query.includeFriends === 'true';
 
     // Search for users whose email or name matches the query
-    const users = await User.find({
-      _id: { $ne: currentUser._id, $nin: friendIds },
+    const filter: any = {
+      _id: includeFriends ? { $ne: currentUser._id } : { $ne: currentUser._id, $nin: friendIds },
       $or: [
         { fullName: { $regex: query, $options: 'i' } },
         { email: { $regex: query, $options: 'i' } }
       ]
-    })
-    .select('fullName email avatar _id')
-    .limit(10);
+    };
+
+    const users = await User.find(filter)
+      .select('fullName email avatar _id')
+      .limit(10);
 
     return res.json({ success: true, data: users });
   } catch (error) {

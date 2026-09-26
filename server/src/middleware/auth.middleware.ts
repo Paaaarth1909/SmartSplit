@@ -7,6 +7,7 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     email: string;
     fullName?: string;
+    phone?: string;
   };
 }
 
@@ -30,24 +31,22 @@ export const requireAuth = async (
       }
     }
 
-    if (!token) {
+    if (!token || token === "mock-token") {
       return res.status(401).json({
         success: false,
         error: "Access token is required. Please log in.",
       });
     }
 
-    let user = null;
-
-    if (token !== "mock-token") {
-      const decoded = verifyToken(token);
-      if (decoded && decoded.id) {
-        user = await User.findById(decoded.id);
-      }
-    } else {
-      // Graceful fallback for SSR pre-rendering
-      user = await User.findOne({});
+    const decoded = verifyToken(token);
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid or expired session. Please log in again.",
+      });
     }
+
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -60,6 +59,7 @@ export const requireAuth = async (
       id: user._id.toString(),
       email: user.email,
       fullName: user.fullName,
+      phone: user.phone || "",
     };
 
     next();

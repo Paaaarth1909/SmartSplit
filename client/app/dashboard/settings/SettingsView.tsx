@@ -1,14 +1,15 @@
-'use client';
-
 import React, { useState } from 'react';
 import { Check } from 'lucide-react';
+import { API_BASE, getAuthHeaders } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface SettingsViewProps {
   initialData: any;
-  token: string | null;
+  token?: string | null;
 }
 
-export default function SettingsView({ initialData, token }: SettingsViewProps) {
+export default function SettingsView({ initialData }: SettingsViewProps) {
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({
     fullName: initialData?.fullName || '',
     email: initialData?.email || '',
@@ -24,6 +25,7 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -51,20 +53,20 @@ export default function SettingsView({ initialData, token }: SettingsViewProps) 
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveSuccess(false);
     try {
-      const res = await fetch('http://127.0.0.1:5050/api/users/me', {
+      const res = await fetch(`${API_BASE}/users/me`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...formData,
           theme: preferences.theme ? 'dark' : 'light'
         })
       });
       if (res.ok) {
-        // Success
+        setSaveSuccess(true);
+        await refreshUser();
+        setTimeout(() => setSaveSuccess(false), 3000);
       } else {
         console.error("Failed to save settings");
       }

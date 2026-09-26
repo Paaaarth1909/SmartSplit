@@ -94,13 +94,16 @@ export const joinGroupByCode = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
-    const isMember = group.members.some(
-      (m) =>
-        (m.email && m.email.toLowerCase() === user.email.toLowerCase()) ||
-        (user.phone && m.phone && m.phone === user.phone) ||
-        m.name.toLowerCase() === user.fullName.toLowerCase() ||
-        (m._id && m._id.toString() === userId)
-    );
+    const userEmail = (user.email || "").toLowerCase().trim();
+    const userPhone = user.phone ? user.phone.trim() : "";
+
+    const isMember = group.members.some((m) => {
+      const mEmail = (m.email || "").toLowerCase().trim();
+      const mPhone = (m.phone || "").trim();
+      if (userEmail && mEmail && mEmail === userEmail) return true;
+      if (userPhone && mPhone && mPhone === userPhone) return true;
+      return false;
+    });
 
     if (isMember) {
       return res.status(400).json({
@@ -112,7 +115,7 @@ export const joinGroupByCode = async (req: Request, res: Response) => {
 
     const newMember = {
       name: user.fullName || user.preferredName || "Member",
-      email: user.email,
+      email: user.email.toLowerCase().trim(),
       phone: user.phone || "",
       role: "member" as const,
       joinedAt: new Date(),
@@ -137,9 +140,20 @@ export const joinGroupByCode = async (req: Request, res: Response) => {
   }
 };
 
-export const getGroups = async (_req: Request, res: Response) => {
+export const getGroups = async (req: Request, res: Response) => {
   try {
-    const groups = await Group.find().sort({ createdAt: -1 });
+    const userId = (req as any).user.id;
+    const userEmail = ((req as any).user.email || "").toLowerCase().trim();
+    const userPhone = (req as any).user.phone || "__NONE__";
+
+    const groups = await Group.find({
+      $or: [
+        { createdBy: userId },
+        { "members.email": { $regex: new RegExp(`^${userEmail}$`, "i") } },
+        ...(userPhone && userPhone !== "__NONE__" ? [{ "members.phone": userPhone }] : [])
+      ]
+    }).sort({ createdAt: -1 });
+
     for (const group of groups) {
       if (!group.inviteCode) {
         await ensureGroupInviteCode(group);
@@ -197,16 +211,42 @@ export const addMember = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Group not found" });
     }
 
+    const trimmedEmail = email ? email.trim().toLowerCase() : "";
+    const trimmedPhone = phone ? phone.trim() : "";
+
+    // Check if user is already a member
+    if (trimmedEmail || trimmedPhone) {
+      const isAlreadyMember = group.members.some((m) => {
+        const mEmail = (m.email || "").toLowerCase().trim();
+        const mPhone = (m.phone || "").trim();
+        if (trimmedEmail && mEmail && mEmail === trimmedEmail) return true;
+        if (trimmedPhone && mPhone && mPhone === trimmedPhone) return true;
+        return false;
+      });
+
+      if (isAlreadyMember) {
+        return res.status(400).json({
+          success: false,
+          error: "This user is already a member of this group."
+        });
+      }
+    }
+
     const newMember = {
-      name,
-      email: email || "",
-      phone: phone || "",
+      name: name.trim(),
+      email: trimmedEmail,
+      phone: trimmedPhone,
       role: (role === "admin" ? "admin" : "member") as "admin" | "member",
       joinedAt: new Date()
     };
 
     group.members.push(newMember);
     await group.save();
+
+    emitToGroup(group._id.toString(), "member-joined", {
+      group: group._id,
+      member: newMember
+    });
 
     return res.status(200).json({ success: true, data: group });
   } catch (error) {
@@ -242,10 +282,29 @@ export const removeMember = async (req: Request, res: Response) => {
 export const deleteGroup = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deletedGroup = await Group.findByIdAndDelete(id);
-    if (!deletedGroup) {
+    const userId = (req as any).user?.id;
+    const userEmail = ((req as any).user?.email || "").toLowerCase().trim();
+
+    const group = await Group.findById(id);
+    if (!group) {
       return res.status(404).json({ error: "Group not found" });
     }
+
+    // Allow creator or member to delete
+    const isAuthorized =
+      group.createdBy === userId ||
+      group.members.some(
+        (m) => m.email && m.email.toLowerCase().trim() === userEmail
+      );
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: "You are not authorized to delete this group" });
+    }
+
+    await Group.findByIdAndDelete(id);
+
+    // Clean up expenses belonging to this group
+    await Expense.deleteMany({ group: id });
 
     return res.status(200).json({ success: true, message: "Group deleted successfully" });
   } catch (error) {
@@ -283,7 +342,12 @@ export const getGroupDetails = async (req: Request, res: Response) => {
     // Validate user is in group
     const user = await User.findById(userId);
     if (!user) return res.status(401).json({ error: "User not found" });
-    const isMember = group.members.some(m => m.email === user.email || m.phone === user.phone);
+    const isMember = 
+      group.createdBy === userId ||
+      group.members.some(m => 
+        (m.email && user.email && m.email.toLowerCase() === user.email.toLowerCase()) || 
+        (m.phone && user.phone && m.phone === user.phone)
+      );
     if (!isMember) return res.status(403).json({ error: "Access denied" });
 
     const expenses = await Expense.find({ group: id }).populate('paidBy', 'fullName email');
