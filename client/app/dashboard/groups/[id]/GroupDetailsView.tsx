@@ -139,7 +139,14 @@ export default function GroupDetailsView({
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 overflow-hidden relative">
-      <CalculatingLoader isOpen={isCalculating} groupName={group.name} />
+      <CalculatingLoader 
+        isOpen={isCalculating} 
+        groupName={group.name} 
+        onComplete={() => {
+          setIsCalculating(false);
+          window.location.reload();
+        }}
+      />
       {isAddExpenseOpen && (
         <AddExpenseModal 
           group={{ ...group, _id: group.id || group._id }}
@@ -147,9 +154,6 @@ export default function GroupDetailsView({
           onExpenseCreated={() => {
             setIsAddExpenseOpen(false);
             setIsCalculating(true);
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
           }}
         />
       )}
@@ -178,9 +182,6 @@ export default function GroupDetailsView({
           onSettled={() => {
             setIsSettleModalOpen(false);
             setIsCalculating(true);
-            setTimeout(() => {
-              window.location.reload();
-            }, 2500);
           }}
         />
       )}
