@@ -23,10 +23,11 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Invalid email address format" });
     }
 
-    if (!password || password.length < 6) {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!password || !passwordRegex.test(password)) {
       return res.status(400).json({
         success: false,
-        error: "Password must be at least 6 characters long",
+        error: "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
       });
     }
 
@@ -196,10 +197,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Email is required" });
     }
 
-    if (!newPassword || newPassword.length < 6) {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!newPassword || !passwordRegex.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        error: "New password must be at least 6 characters long",
+        error: "New password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
       });
     }
 

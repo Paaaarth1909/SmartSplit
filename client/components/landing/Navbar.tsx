@@ -55,9 +55,6 @@ export default function Navbar() {
 
           <div className={`hidden md:flex items-center text-sm font-medium text-white/60 transition-all duration-500 ${isScrolled ? 'gap-6 text-xs' : 'gap-8 text-sm'}`}>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#ocr" className="hover:text-white transition-colors">AI Receipt OCR</a>
-            <a href="#algorithm" className="hover:text-white transition-colors">Debt Algorithm</a>
-            <a href="#integrations" className="hover:text-white transition-colors">Integrations</a>
           </div>
 
           <div className="flex items-center gap-3">

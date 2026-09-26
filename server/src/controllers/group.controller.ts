@@ -353,28 +353,39 @@ export const getGroupDetails = async (req: Request, res: Response) => {
     const expenses = await Expense.find({ group: id }).populate('paidBy', 'fullName email');
 
     const balancesMap = new Map<string, { name: string, netAmount: number }>();
+    const memberIdToUserId = new Map<string, string>();
     let totalShared = 0;
 
     // Initialize map with all members
     for (const member of group.members) {
       const memberUser = await User.findOne({ 
         $or: [
-          { email: member.email },
+          { email: member.email ? member.email.toLowerCase().trim() : "__NONE__" },
           { phone: member.phone !== "" ? member.phone : "__NONE__" },
           { fullName: member.name }
         ] 
       });
-      if (memberUser) {
-        balancesMap.set(memberUser._id.toString(), { name: memberUser.fullName || member.name, netAmount: 0 });
+      const uid = memberUser ? memberUser._id.toString() : (member._id ? member._id.toString() : member.name);
+      balancesMap.set(uid, { name: memberUser?.fullName || member.name, netAmount: 0 });
+      if (member._id && memberUser) {
+        memberIdToUserId.set(member._id.toString(), memberUser._id.toString());
       }
     }
 
     expenses.forEach(exp => {
       totalShared += exp.amount;
-      const payerId = exp.paidBy._id.toString();
+      let payerId = (exp.paidBy as any)?._id?.toString() || (exp.paidBy as any)?.toString() || '';
+      if (memberIdToUserId.has(payerId)) {
+        payerId = memberIdToUserId.get(payerId)!;
+      }
+      if (!payerId) return;
       
       exp.splits.forEach(split => {
-        const splitUserId = split.user.toString();
+        let splitUserId = (split.user as any)?._id?.toString() || (split.user as any)?.toString() || '';
+        if (memberIdToUserId.has(splitUserId)) {
+          splitUserId = memberIdToUserId.get(splitUserId)!;
+        }
+        if (!splitUserId) return;
         
         if (payerId !== splitUserId) {
           if (balancesMap.has(payerId)) {
@@ -391,7 +402,7 @@ export const getGroupDetails = async (req: Request, res: Response) => {
     const balances = Array.from(balancesMap.entries()).map(([uid, data]) => ({
       userId: uid,
       name: data.name,
-      netAmount: data.netAmount
+      netAmount: Math.round(data.netAmount * 100) / 100
     }));
 
     const settlements = calculateSettlements(balances);
@@ -400,11 +411,15 @@ export const getGroupDetails = async (req: Request, res: Response) => {
     let userPaid = 0;
     
     expenses.forEach(exp => {
-      if (exp.paidBy._id.toString() === userId) {
+      let pId = (exp.paidBy as any)?._id?.toString() || (exp.paidBy as any)?.toString() || '';
+      if (memberIdToUserId.has(pId)) pId = memberIdToUserId.get(pId)!;
+      if (pId === userId) {
         userPaid += exp.amount;
       }
       exp.splits.forEach(split => {
-        if (split.user.toString() === userId) {
+        let sId = (split.user as any)?._id?.toString() || (split.user as any)?.toString() || '';
+        if (memberIdToUserId.has(sId)) sId = memberIdToUserId.get(sId)!;
+        if (sId === userId) {
           userOwed += split.amount;
         }
       });
@@ -417,6 +432,7 @@ export const getGroupDetails = async (req: Request, res: Response) => {
           id: group._id,
           name: group.name,
           category: (group as any).category || 'GENERAL',
+          currency: group.currency || 'INR',
           memberCount: group.members.length,
           inviteCode: group.inviteCode,
           members: group.members
@@ -434,5 +450,95 @@ export const getGroupDetails = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error in getGroupDetails:", error);
     return res.status(500).json({ error: "Failed to fetch group details" });
+  }
+};
+
+export const settleGroupDebt = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.id;
+    const { payerId, receiverId, amount, notes } = req.body;
+
+    if (!payerId || !receiverId) {
+      return res.status(400).json({ success: false, error: "Payer and receiver are required." });
+    }
+
+    const settleAmount = Number(amount);
+    if (isNaN(settleAmount) || settleAmount <= 0) {
+      return res.status(400).json({ success: false, error: "A valid positive settlement amount is required." });
+    }
+
+    const group = await Group.findById(id);
+    if (!group) {
+      return res.status(404).json({ success: false, error: "Group not found." });
+    }
+
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(401).json({ success: false, error: "User not found." });
+    }
+
+    // Verify membership
+    const isMember = 
+      group.createdBy === userId ||
+      group.members.some(m => 
+        (m.email && currentUser.email && m.email.toLowerCase() === currentUser.email.toLowerCase()) || 
+        (m.phone && currentUser.phone && m.phone === currentUser.phone)
+      );
+
+    if (!isMember) {
+      return res.status(403).json({ success: false, error: "Access denied." });
+    }
+
+    // Find payer and receiver names
+    const payerUser = await User.findById(payerId).catch(() => null);
+    const receiverUser = await User.findById(receiverId).catch(() => null);
+
+    const payerMember = group.members.find(m => m._id?.toString() === payerId);
+    const receiverMember = group.members.find(m => m._id?.toString() === receiverId);
+
+    const payerName = payerUser?.fullName || payerMember?.name || "Member";
+    const receiverName = receiverUser?.fullName || receiverMember?.name || "Member";
+
+    const description = notes?.trim() || `Settlement: ${payerName} paid ${receiverName}`;
+
+    // Target ObjectIds
+    const finalPayerId = payerUser ? payerUser._id : (payerMember?._id || payerId);
+    const finalReceiverId = receiverUser ? receiverUser._id : (receiverMember?._id || receiverId);
+
+    const settlementExpense = await Expense.create({
+      group: group._id,
+      description,
+      amount: settleAmount,
+      currency: group.currency || "INR",
+      category: "Settlement",
+      paidBy: finalPayerId,
+      splitType: "exact",
+      splits: [
+        {
+          user: finalReceiverId,
+          amount: settleAmount,
+        }
+      ],
+      createdBy: currentUser._id,
+      date: new Date()
+    });
+
+    emitToGroup(group._id.toString(), "expense:created", settlementExpense);
+    emitToGroup(group._id.toString(), "settlement:completed", {
+      groupId: group._id,
+      payerName,
+      receiverName,
+      amount: settleAmount
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully settled ₹${settleAmount.toFixed(2)} between ${payerName} and ${receiverName}`,
+      data: settlementExpense
+    });
+  } catch (error: any) {
+    console.error("Error settling debt:", error);
+    return res.status(500).json({ success: false, error: error.message || "Failed to settle payment" });
   }
 };

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { Utensils, Car, Film, Plane, Home, Bell, Receipt, Users, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE, getAuthHeaders } from '@/lib/api';
@@ -27,6 +26,7 @@ export default function ProfileDashboardPage() {
   });
 
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -92,13 +92,13 @@ export default function ProfileDashboardPage() {
           
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8">
             <div className="relative">
-              {profileImageUrl ? (
+              {profileImageUrl && !imgError ? (
                 <div className="w-20 h-20 rounded-full border-2 border-[#222] shadow-lg overflow-hidden relative">
-                  <Image 
+                  <img 
                     src={profileImageUrl} 
                     alt={fullName} 
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
+                    onError={() => setImgError(true)}
                   />
                 </div>
               ) : (

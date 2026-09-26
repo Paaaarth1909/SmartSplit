@@ -9,7 +9,8 @@ import {
   removeMember,
   deleteGroup,
   getGroupMessages,
-  joinGroupByCode
+  joinGroupByCode,
+  settleGroupDebt
 } from "../controllers/group.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 
@@ -20,6 +21,7 @@ router.post("/join", requireAuth, joinGroupByCode);
 router.get("/", requireAuth, getGroups);
 router.get("/:id", requireAuth, getGroupById);
 router.get("/:id/details", requireAuth, getGroupDetails);
+router.post("/:id/settle", requireAuth, settleGroupDebt);
 router.get("/:id/invite-code", requireAuth, getOrGenerateInviteCode);
 router.post("/:id/invite-code", requireAuth, getOrGenerateInviteCode);
 router.get("/:id/messages", requireAuth, getGroupMessages);

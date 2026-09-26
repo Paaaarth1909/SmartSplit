@@ -30,8 +30,9 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setError("Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).");
       return;
     }
 
@@ -148,7 +149,7 @@ export default function ForgotPasswordPage() {
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
+                placeholder="At least 8 chars with uppercase, lowercase, number & symbol"
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
               />
               <button
@@ -159,6 +160,25 @@ export default function ForgotPasswordPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {newPassword.length > 0 && (
+              <div className="mt-2 text-[11px] grid grid-cols-2 gap-1.5 text-white/50 bg-white/5 p-2.5 rounded-lg border border-white/5">
+                <span className={newPassword.length >= 8 ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                  {newPassword.length >= 8 ? "✓" : "○"} 8+ characters
+                </span>
+                <span className={/[A-Z]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                  {/[A-Z]/.test(newPassword) ? "✓" : "○"} Uppercase letter
+                </span>
+                <span className={/[a-z]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                  {/[a-z]/.test(newPassword) ? "✓" : "○"} Lowercase letter
+                </span>
+                <span className={/\d/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                  {/\d/.test(newPassword) ? "✓" : "○"} Number (0-9)
+                </span>
+                <span className={/[@$!%*?&]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                  {/[@$!%*?&]/.test(newPassword) ? "✓" : "○"} Symbol (@$!%*?&)
+                </span>
+              </div>
+            )}
           </div>
 
           <div>

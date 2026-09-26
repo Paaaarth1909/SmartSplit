@@ -5,7 +5,10 @@ import * as expenseService from "../services/expense.js";
 import { getGroupBalances } from "../services/balanceEngine.js";
 
 export const createExpense = asyncHandler(async (req: Request, res: Response) => {
-  const createdBy = req.user!.id;
+  const createdBy = (req as any).user?.id || (req as any).user?._id?.toString();
+  if (!createdBy) {
+    return res.status(401).json({ success: false, error: "Authentication required to create an expense" });
+  }
   const expense = await expenseService.createExpense({ ...req.body, createdBy });
 
   return ok(res, expense, 201);

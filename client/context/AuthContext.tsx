@@ -103,6 +103,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  useEffect(() => {
+    if (user?.preferences?.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else if (user?.preferences?.theme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+  }, [user?.preferences?.theme]);
+
   return (
     <AuthContext.Provider
       value={{

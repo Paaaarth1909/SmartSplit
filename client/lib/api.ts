@@ -7,7 +7,7 @@ import {
 } from "../components/types";
 
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5050/api";
 
 const TOKEN_KEY = "smartsplit_auth_token";
 
@@ -199,4 +199,25 @@ export async function previewSplit(
   }
   const json = await res.json();
   return json.data;
+}
+
+export async function settleDebt(
+  groupId: string,
+  payload: {
+    payerId: string;
+    receiverId: string;
+    amount: number;
+    notes?: string;
+  }
+) {
+  const res = await fetch(`${API_BASE}/groups/${groupId}/settle`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to settle payment");
+  }
+  return data;
 }

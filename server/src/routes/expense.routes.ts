@@ -8,8 +8,11 @@ import {
   previewSplitSchema,
 } from "../validators/expense.validator.js";
 import * as expenseController from "../controllers/expense.controller.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
+
+router.use(requireAuth);
 router.post(
   "/preview-split",
   validate(previewSplitSchema),

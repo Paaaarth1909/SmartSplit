@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Send, Paperclip, Plus, MessageSquare, X, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import { Send, Paperclip, Plus, MessageSquare, X, Trash2, AlertTriangle, Loader2, CheckCircle2, Check } from 'lucide-react';
 import CalculatingLoader from '../../../../components/CalculatingLoader';
 import AddExpenseModal from '../../../../components/AddExpenseModal';
 import AddGroupMemberModal from '../../../../components/AddGroupMemberModal';
+import SettleDebtModal from '../../../../components/SettleDebtModal';
 import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 interface GroupDetailsViewProps {
@@ -31,6 +31,8 @@ export default function GroupDetailsView({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
+  const [settlePrefill, setSettlePrefill] = useState<{ payerId?: string; receiverId?: string; amount?: number } | undefined>();
   const [copiedCode, setCopiedCode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -38,6 +40,32 @@ export default function GroupDetailsView({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { group, balances, settlements, distribution } = groupData;
+
+  const handleOpenSettleModal = (prefillData?: { payerId?: string; receiverId?: string; amount?: number }) => {
+    setSettlePrefill(prefillData);
+    setIsSettleModalOpen(true);
+  };
+
+  const handleSettleForBalance = (bal: any) => {
+    if (bal.netAmount < -0.01) {
+      const match = settlements.find((s: any) => s.from === bal.userId);
+      if (match) {
+        handleOpenSettleModal({ payerId: match.from, receiverId: match.to, amount: match.amount });
+        return;
+      }
+    } else if (bal.netAmount > 0.01) {
+      const match = settlements.find((s: any) => s.to === bal.userId);
+      if (match) {
+        handleOpenSettleModal({ payerId: match.from, receiverId: match.to, amount: match.amount });
+        return;
+      }
+    }
+    handleOpenSettleModal({
+      payerId: bal.netAmount < 0 ? bal.userId : undefined,
+      receiverId: bal.netAmount > 0 ? bal.userId : undefined,
+      amount: Math.abs(bal.netAmount)
+    });
+  };
 
   useEffect(() => {
     const newSocket = io('http://127.0.0.1:5050');
@@ -136,6 +164,26 @@ export default function GroupDetailsView({
           }}
         />
       )}
+
+      {isSettleModalOpen && (
+        <SettleDebtModal
+          isOpen={isSettleModalOpen}
+          onClose={() => setIsSettleModalOpen(false)}
+          groupId={groupId}
+          currency={group.currency || 'INR'}
+          members={group.members || []}
+          balances={balances || []}
+          settlements={settlements || []}
+          prefill={settlePrefill}
+          onSettled={() => {
+            setIsSettleModalOpen(false);
+            setIsCalculating(true);
+            setTimeout(() => {
+              window.location.reload();
+            }, 2500);
+          }}
+        />
+      )}
       
       {/* LEFT COLUMN: Member Details */}
       <div className="w-full lg:w-64 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 custom-scrollbar">
@@ -229,13 +277,24 @@ export default function GroupDetailsView({
         <div className="p-6 border-b border-white/5 z-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-white tracking-tight">Owe and Pay</h2>
-            <button 
-              onClick={() => setIsAddExpenseOpen(true)}
-              className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-black hover:bg-[#b2f5d1] transition-colors"
-              title="Add Expense"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              {settlements.length > 0 && (
+                <button 
+                  onClick={() => handleOpenSettleModal()}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#b2f5d1]/15 hover:bg-[#b2f5d1]/25 text-[#b2f5d1] border border-[#b2f5d1]/30 text-xs font-bold transition-all shadow-[0_0_15px_rgba(178,245,209,0.15)] active:scale-95 cursor-pointer"
+                  title="Settle debt between members"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Settle Debt
+                </button>
+              )}
+              <button 
+                onClick={() => setIsAddExpenseOpen(true)}
+                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-black hover:bg-[#b2f5d1] transition-colors cursor-pointer"
+                title="Add Expense"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           
           <div className="bg-[#1a1a1c] border border-white/5 rounded-xl p-4 flex flex-col gap-3">
@@ -308,22 +367,50 @@ export default function GroupDetailsView({
                         {userSettlements.length === 0 ? (
                           <span className="text-white/30">None</span>
                         ) : (
-                          <div className="flex flex-col gap-1 text-white/60">
-                            {userSettlements.map((s: any, i: number) => (
-                              <span key={i}>
-                                {s.from === balance.userId 
-                                  ? `Pay ${s.toName}: ${formatCurrency(s.amount)}` 
-                                  : `Receive from ${s.fromName}: ${formatCurrency(s.amount)}`}
-                              </span>
-                            ))}
+                          <div className="flex flex-col gap-1.5">
+                            {userSettlements.map((s: any, i: number) => {
+                              const isPayer = s.from === balance.userId;
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => handleOpenSettleModal({ payerId: s.from, receiverId: s.to, amount: s.amount })}
+                                  className="group/settle inline-flex items-center gap-1.5 text-left text-white/70 hover:text-white transition-colors cursor-pointer w-fit"
+                                  title="Click to settle this specific debt"
+                                >
+                                  <span className={isPayer ? 'text-red-400 font-medium' : 'text-[#b2f5d1] font-medium'}>
+                                    {isPayer ? `Pay ${s.toName}:` : `Receive from ${s.fromName}:`}
+                                  </span>
+                                  <span className="font-mono font-bold text-white group-hover/settle:underline">
+                                    {formatCurrency(s.amount)}
+                                  </span>
+                                  <span className="text-[10px] text-[#b2f5d1] opacity-60 group-hover/settle:opacity-100 transition-opacity">
+                                    ↗
+                                  </span>
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        {!isSettled && (
-                          <button className="text-xs font-bold text-[#b2f5d1] bg-[#b2f5d1]/10 hover:bg-[#b2f5d1]/20 px-3 py-1.5 rounded-lg transition-colors border border-[#b2f5d1]/20 opacity-0 group-hover:opacity-100">
-                            Settle All
+                        {!isSettled ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSettleForBalance(balance)}
+                            className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all active:scale-95 cursor-pointer ${
+                              owes 
+                                ? 'text-[#121214] bg-[#b2f5d1] hover:bg-[#a0f0c4] shadow-[0_0_12px_rgba(178,245,209,0.25)]' 
+                                : 'text-[#b2f5d1] bg-[#b2f5d1]/10 hover:bg-[#b2f5d1]/20 border border-[#b2f5d1]/30'
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            {owes ? 'Settle Debt' : 'Record Payment'}
                           </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#b2f5d1]/60 bg-[#b2f5d1]/5 border border-[#b2f5d1]/15 px-2.5 py-1 rounded-md">
+                            <Check className="w-3 h-3 text-[#b2f5d1]" /> Settled
+                          </span>
                         )}
                       </td>
                     </tr>

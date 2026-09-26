@@ -575,11 +575,20 @@ export const updateCurrentUser = async (req: Request, res: Response) => {
     if (phone !== undefined) user.phone = phone;
     if (avatar !== undefined) user.avatar = avatar;
     
-    if (currency !== undefined) user.preferences.currency = currency;
-    if (theme !== undefined) user.preferences.theme = theme;
-    if (compactDensity !== undefined) user.preferences.compactDensity = compactDensity;
-    if (liveForex !== undefined) user.preferences.liveForex = liveForex;
-    if (acousticFeedback !== undefined) user.preferences.acousticFeedback = acousticFeedback;
+    if (!user.preferences) {
+      user.preferences = {};
+    }
+
+    let prefsModified = false;
+    if (currency !== undefined) { user.preferences.currency = currency; prefsModified = true; }
+    if (theme !== undefined) { user.preferences.theme = theme; prefsModified = true; }
+    if (compactDensity !== undefined) { user.preferences.compactDensity = compactDensity; prefsModified = true; }
+    if (liveForex !== undefined) { user.preferences.liveForex = liveForex; prefsModified = true; }
+    if (acousticFeedback !== undefined) { user.preferences.acousticFeedback = acousticFeedback; prefsModified = true; }
+
+    if (prefsModified) {
+      user.markModified('preferences');
+    }
 
     await user.save();
 

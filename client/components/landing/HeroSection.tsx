@@ -40,9 +40,9 @@ export default function HeroSection() {
             Launch Web App
           </LiquidButton>
         </Link>
-        <LiquidButton className="text-white/70 hover:text-white" variant="ghost" size="lg">
+        {/* <LiquidButton className="text-white/70 hover:text-white" variant="ghost" size="lg">
           View Interactive Demo
-        </LiquidButton>
+        </LiquidButton> */}
       </motion.div>
     </section>
   );

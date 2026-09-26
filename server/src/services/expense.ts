@@ -1,6 +1,7 @@
 import mongoose, { Types } from "mongoose";
 import { Expense, IExpense } from "../models/Expense.js";
 import { Group } from "../models/Group.js";
+import { User } from "../models/User.js";
 import { AppError } from "../middleware/error.middleware.js";
 import {
   calculateSplit,
@@ -46,7 +47,18 @@ const assertGroupMembership = async (groupId: string, userIds: string[]) => {
   const group = await Group.findById(groupId);
   if (!group) throw new AppError("Group not found", 404);
 
-  const memberIds = new Set(group.members.map((m) => m._id?.toString()));
+  const memberIds = new Set<string>();
+  for (const m of group.members) {
+    if (m._id) memberIds.add(m._id.toString());
+  }
+
+  // Also allow matching by User ID if a user matches member's email
+  const memberEmails = group.members.map((m) => m.email?.toLowerCase().trim()).filter(Boolean);
+  if (memberEmails.length > 0) {
+    const matchedUsers = await User.find({ email: { $in: memberEmails } }).select("_id").lean();
+    matchedUsers.forEach((u) => memberIds.add(u._id.toString()));
+  }
+
   const invalid = userIds.filter((id) => !memberIds.has(id));
   if (invalid.length > 0) {
     throw new AppError(
@@ -125,6 +137,19 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
 
   const computedSplits = calculateSplit(effectiveAmount, splitType, participants);
 
+  // Map member._id to User._id if user exists with member email
+  const memberToUserMap = new Map<string, string>();
+  for (const m of group.members) {
+    if (m._id && m.email) {
+      const u = await User.findOne({ email: m.email.toLowerCase().trim() }).select("_id").lean();
+      if (u) {
+        memberToUserMap.set(m._id.toString(), u._id.toString());
+      }
+    }
+  }
+
+  const resolvedPaidBy = memberToUserMap.get(paidBy) || paidBy;
+
   const session = await mongoose.startSession();
   try {
     let expense!: IExpense;
@@ -141,10 +166,10 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
             exchangeRate,
             convertedAmount,
             category,
-            paidBy,
+            paidBy: resolvedPaidBy,
             splitType,
             splits: computedSplits.map((s, i) => ({
-              user: s.userId,
+              user: memberToUserMap.get(s.userId) || s.userId,
               amount: s.amount,
               percentage: participants[i]?.percentage,
               shares: participants[i]?.shares,
@@ -160,10 +185,10 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
 
       await applyExpenseToBalances({
         groupId,
-        payerId: paidBy,
+        payerId: resolvedPaidBy,
         amount: effectiveAmount,
         splits: computedSplits.map((s) => ({
-          user: new Types.ObjectId(s.userId),
+          user: new Types.ObjectId(memberToUserMap.get(s.userId) || s.userId),
           amount: s.amount,
         })),
         session,
@@ -188,8 +213,8 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
     }
 
     const populated = await expense.populate([
-      { path: "paidBy", select: "name email avatarUrl" },
-      { path: "splits.user", select: "name email avatarUrl" },
+      { path: "paidBy", select: "fullName name email avatar avatarUrl" },
+      { path: "splits.user", select: "fullName name email avatar avatarUrl" },
     ]);
 
     emitToGroup(groupId, "expense:created", populated);

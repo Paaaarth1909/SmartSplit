@@ -54,11 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="p-4">
-            <Link href="/dashboard/expenses/new" className="w-full bg-[#b2f5d1] hover:bg-[#9de4c2] text-black rounded-lg py-2 flex items-center justify-center gap-2 text-sm font-bold transition-colors mb-5 shadow-[0_0_15px_rgba(178,245,209,0.3)]">
-              <Plus className="w-4 h-4" /> Add Expense
-            </Link>
-
-            <nav className="flex flex-col gap-1.5">
+            <nav className="flex flex-col gap-1.5 mt-2">
               <Link href="/dashboard" className={getLinkClass("/dashboard")}>
                 <LayoutDashboard className={getIconClass("/dashboard")} /> Dashboard
               </Link>
@@ -105,27 +101,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-16 flex items-center justify-between px-8 border-b border-white/5 shrink-0 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-md z-20">
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="text-sm font-bold text-white border-b-2 border-[#b2f5d1] pb-5 translate-y-[10px]">Overview</Link>
-            <Link href="#" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Settlements</Link>
-            <Link href="#" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Reports</Link>
-            <Link href="/dashboard/settings" className="text-sm font-medium text-white/50 hover:text-white transition-colors">Settings</Link>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <input type="text" placeholder="Search transactions..." className="bg-transparent border border-white/10 rounded-full py-1.5 pl-4 pr-10 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 w-56 transition-colors" />
+          {pathname === '/dashboard/groups' && (
+            <div className="absolute left-1/2 -translate-x-1/2">
+              <input type="text" placeholder="Search groups by name..." className="bg-transparent border border-white/10 rounded-full py-1.5 px-5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 w-80 transition-colors bg-white/5" />
             </div>
-            
-            <button className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:border-white/20 transition-all">
-              <Bell className="w-3.5 h-3.5" />
-            </button>
-            <button className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:border-white/20 transition-all">
-              <HelpCircle className="w-3.5 h-3.5" />
-            </button>
-            <Link href="/dashboard/expenses/new" className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-4 py-1.5 text-xs font-bold text-white transition-all flex items-center gap-1.5">
-              <svg className="w-3 h-3 text-[#b2f5d1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg> Quick Split
-            </Link>
+          )}
+          
+          <div className="flex items-center gap-4">
             <div className="pl-2 border-l border-white/10">
               <Link href="/dashboard/profile" className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-[#27ff9a]/40 flex items-center justify-center text-xs font-bold text-[#27ff9a] hover:border-[#27ff9a] transition-colors">
