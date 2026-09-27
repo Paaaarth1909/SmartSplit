@@ -281,7 +281,7 @@ export const removeMember = async (req: Request, res: Response) => {
 
 export const deleteGroup = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userId = (req as any).user?.id;
     const userEmail = ((req as any).user?.email || "").toLowerCase().trim();
 
@@ -303,8 +303,24 @@ export const deleteGroup = async (req: Request, res: Response) => {
 
     await Group.findByIdAndDelete(id);
 
-    // Clean up expenses belonging to this group
+    // Thoroughly clean up expenses belonging to this group
     await Expense.deleteMany({ group: id });
+    try {
+      const { Types } = await import("mongoose");
+      if (typeof id === "string" && Types.ObjectId.isValid(id)) {
+        await Expense.deleteMany({ group: new Types.ObjectId(id) });
+      }
+    } catch (_) {}
+
+    try {
+      const { Balance } = await import("../models/Balance.js");
+      await Balance.deleteMany({ group: id });
+    } catch (_) {}
+
+    try {
+      const { GroupMessage } = await import("../models/GroupMessage.js");
+      await GroupMessage.deleteMany({ group: id });
+    } catch (_) {}
 
     return res.status(200).json({ success: true, message: "Group deleted successfully" });
   } catch (error) {

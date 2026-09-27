@@ -1,16 +1,90 @@
-# dependencies
+# ==========================================
+# Dependencies
+# ==========================================
 node_modules/
 **/node_modules/
+.pnp
+.pnp.js
 
-# Build output
+# ==========================================
+# Environment & Secrets (NEVER COMMIT)
+# ==========================================
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+!.env.*.example
+
+# Authentication & Provider secrets
+.clerk/
+**/.clerk/
+keyless.json
+**/keyless.json
+
+# Private Keys & Certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+
+# ==========================================
+# Sensitive Database Exports & User Dumps
+# ==========================================
+existing_users.json
+existing_users.md
+*.dump
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+dump/
+exports/
+
+# ==========================================
+# Build Outputs & Generated Caches
+# ==========================================
 dist/
 **/dist/
 .next/
 out/
+build/
+*.tsbuildinfo
+.turbo/
+.vercel/
 
-# Environment files
-.env
-.env.local
-.env*.local
-*.env
-.clerk 
+# ==========================================
+# Logs & Debugging
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Operating System & IDE Artifacts
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+.gemini/
+
+# ==========================================
+# Temporary Files
+# ==========================================
+tmp/
+temp/
+*.tmp
+*.bak
+scratch/

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import CreateGroupModal from '@/components/CreateGroupModal';
+import { API_BASE } from '@/lib/api';
 import { ArrowUpRight, ArrowDownRight, Search, CreditCard, Wallet, Users, Settings, Banknote, UserPlus, PieChart } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -164,7 +165,7 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
           <CreateGroupModal 
             onClose={() => setIsCreateGroupOpen(false)}
             onGroupCreated={() => window.location.reload()}
-            apiUrl="http://127.0.0.1:5050/api/groups"
+            apiUrl={`${API_BASE}/groups`}
           />
         )}
       </div>

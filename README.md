@@ -63,6 +63,7 @@ SmartSplit/
 git clone https://github.com/Garvgoel23/SmartSplit.git
 cd SmartSplit
 
+
 ## 🧩 Core Modules
 
 **Backend:** Clerk auth integration, group management, expense APIs, balance engine, debt simplification algorithm, Socket.io events, analytics service.

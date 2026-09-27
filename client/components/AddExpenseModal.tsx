@@ -20,7 +20,7 @@ import {
 import { Group, SplitType } from './types';
 import SplitMethodSelector from './SplitMethodSelector';
 import SplitInputPanel from './SplitInputPanel';
-import { API_BASE, getAuthHeaders } from '@/lib/api';
+import { API_BASE, getAuthHeaders, getAuthToken } from '@/lib/api';
 
 interface Props {
   group: Group;
@@ -107,14 +107,19 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
     setAiError('');
 
     try {
-      const token = await getToken();
+      const token = getAuthToken();
       const formData = new FormData();
       formData.append('receipt', file);
       formData.append('groupId', group._id);
 
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${API_BASE}/ai/ocr`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         body: formData,
       });
 
