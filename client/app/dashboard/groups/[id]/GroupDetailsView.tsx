@@ -6,6 +6,7 @@ import CalculatingLoader from '../../../../components/CalculatingLoader';
 import AddExpenseModal from '../../../../components/AddExpenseModal';
 import AddGroupMemberModal from '../../../../components/AddGroupMemberModal';
 import SettleDebtModal from '../../../../components/SettleDebtModal';
+import EditGroupModal from '../../../../components/EditGroupModal';
 import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 interface GroupDetailsViewProps {
@@ -31,6 +32,7 @@ export default function GroupDetailsView({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
   const [settlePrefill, setSettlePrefill] = useState<{ payerId?: string; receiverId?: string; amount?: number } | undefined>();
   const [copiedCode, setCopiedCode] = useState(false);
@@ -38,6 +40,13 @@ export default function GroupDetailsView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [chatNotification, setChatNotification] = useState<{ senderName: string, text: string } | null>(null);
+  const isChatOpenRef = useRef(isChatOpen);
+
+  useEffect(() => {
+    isChatOpenRef.current = isChatOpen;
+  }, [isChatOpen]);
 
   const { group, balances, settlements, distribution } = groupData;
 
@@ -78,6 +87,14 @@ export default function GroupDetailsView({
 
     newSocket.on('chat:message', (msg) => {
       setMessages((prev) => [...prev, msg]);
+      
+      const isMe = msg.senderId === currentUserId || msg.senderName === currentUserName;
+      if (!isChatOpenRef.current && !isMe) {
+        setChatNotification({ senderName: msg.senderName || 'Someone', text: msg.text });
+        setTimeout(() => {
+          setChatNotification((prev) => prev?.text === msg.text ? null : prev);
+        }, 5000);
+      }
     });
 
     return () => {
@@ -140,6 +157,31 @@ export default function GroupDetailsView({
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 overflow-hidden relative">
+      
+      {chatNotification && (
+        <div 
+          className="fixed bottom-6 right-6 z-[200] bg-[#121214] border border-[#b2f5d1]/30 p-4 rounded-xl shadow-2xl flex items-center gap-3 cursor-pointer hover:bg-[#1a1a1c] transition-colors animate-in slide-in-from-bottom-5"
+          onClick={() => {
+            setIsChatOpen(true);
+            setChatNotification(null);
+          }}
+        >
+          <div className="w-10 h-10 rounded-full bg-[#b2f5d1]/20 flex items-center justify-center text-[#b2f5d1]">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col max-w-[200px]">
+            <span className="text-xs font-semibold text-[#b2f5d1]">{chatNotification.senderName}</span>
+            <span className="text-sm text-white truncate">{chatNotification.text}</span>
+          </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setChatNotification(null); }}
+            className="ml-2 text-white/40 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <CalculatingLoader 
         isOpen={isCalculating} 
         groupName={group.name} 
@@ -170,6 +212,17 @@ export default function GroupDetailsView({
         />
       )}
 
+      {isEditGroupOpen && (
+        <EditGroupModal
+          group={{ ...group, _id: group.id || group._id }}
+          onClose={() => setIsEditGroupOpen(false)}
+          onGroupUpdated={() => {
+            setIsEditGroupOpen(false);
+            window.location.reload();
+          }}
+        />
+      )}
+
       {isSettleModalOpen && (
         <SettleDebtModal
           isOpen={isSettleModalOpen}
@@ -194,7 +247,21 @@ export default function GroupDetailsView({
             <div className="w-10 h-10 bg-[#b2f5d1]/20 border border-[#b2f5d1]/30 rounded-lg flex items-center justify-center">
               <span className="text-xl font-bold text-[#b2f5d1]">{group.name.charAt(0)}</span>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight truncate">{group.name}</h1>
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white tracking-tight truncate">{group.name}</h1>
+                <button 
+                  onClick={() => setIsEditGroupOpen(true)}
+                  className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md text-white/50 hover:text-white transition-colors shrink-0"
+                  title="Edit Group"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </button>
+              </div>
+              {group.description && (
+                <p className="text-xs text-white/50 truncate mt-0.5">{group.description}</p>
+              )}
+            </div>
           </div>
 
           {group.inviteCode && (

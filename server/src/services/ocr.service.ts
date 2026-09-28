@@ -18,7 +18,12 @@ export interface OcrResult {
   total: number;
 }
 
-const MODELS = ["gemini-3.6-flash"];
+const MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro"
+];
 
 export const processReceiptImage = async (
   imageBuffer: Buffer,

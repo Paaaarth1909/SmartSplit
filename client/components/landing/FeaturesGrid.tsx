@@ -27,7 +27,7 @@ const features = [
 
 export default function FeaturesGrid() {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 py-32" id="features">
+    <section className="w-full max-w-6xl mx-auto px-4 pt-8 pb-32" id="features">
       <div className="text-center mb-16">
         <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Intelligent Ledger Architecture</h2>
       </div>

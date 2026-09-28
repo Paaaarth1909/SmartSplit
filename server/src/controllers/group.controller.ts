@@ -558,3 +558,40 @@ export const settleGroupDebt = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, error: error.message || "Failed to settle payment" });
   }
 };
+
+export const updateGroup = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    const userId = (req as any).user.id;
+
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({ error: "Group name is required" });
+    }
+
+    const group = await Group.findById(id);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    const isMember = group.members.some(
+      (m) => m.email === (req as any).user.email || m.phone === (req as any).user.phone
+    );
+
+    if (!isMember && group.createdBy.toString() !== userId) {
+      return res.status(403).json({ error: "Not authorized to update this group" });
+    }
+
+    group.name = name;
+    if (description !== undefined) {
+      group.description = description;
+    }
+
+    await group.save();
+
+    return res.json({ success: true, data: group });
+  } catch (error) {
+    console.error("Failed to update group:", error);
+    return res.status(500).json({ error: "Failed to update group" });
+  }
+};

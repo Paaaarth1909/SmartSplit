@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { LiquidButton } from '../ui/button';
+import { Safari } from '../ui/safari';
 import Link from 'next/link';
 
 export default function HeroSection() {
@@ -40,9 +41,15 @@ export default function HeroSection() {
             Launch Web App
           </LiquidButton>
         </Link>
-        {/* <LiquidButton className="text-white/70 hover:text-white" variant="ghost" size="lg">
-          View Interactive Demo
-        </LiquidButton> */}
+      </motion.div>
+
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+        className="w-full max-w-5xl mt-16 relative"
+      >
+        <Safari url="https://smartsplit-vert.vercel.app/" imageSrc="/dashboard-mockup.png" className="w-full h-auto shadow-2xl rounded-xl border border-white/10" />
       </motion.div>
     </section>
   );

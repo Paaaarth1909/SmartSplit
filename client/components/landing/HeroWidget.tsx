@@ -6,7 +6,7 @@ import { Scan, Send, Network } from 'lucide-react';
 
 export default function HeroWidget() {
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 pb-32">
+    <div className="w-full max-w-5xl mx-auto px-4 pb-12">
       <motion.div 
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
