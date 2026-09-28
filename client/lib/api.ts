@@ -120,11 +120,28 @@ export async function loginUser(payload: {
   return data;
 }
 
+export async function requestPasswordResetOtp(payload: {
+  email: string;
+}): Promise<AuthResponse> {
+  const res = await fetch(`${API_BASE}/auth/forgot-password/request-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to request OTP");
+  }
+  return data;
+}
+
 export async function forgotPasswordUser(payload: {
   email: string;
+  otp: string;
   newPassword: string;
+
 }): Promise<AuthResponse> {
-  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+  const res = await fetch(`${API_BASE}/auth/forgot-password/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

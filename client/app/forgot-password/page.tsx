@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
-import { Lock, Mail, ArrowRight, Eye, EyeOff, Sparkles, KeyRound, CheckCircle2 } from "lucide-react";
+import { Lock, Mail, ArrowRight, Eye, EyeOff, KeyRound, CheckCircle2, ShieldCheck } from "lucide-react";
 import DotGrid from "@/components/DotGrid";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { resetPassword } = useAuth();
+  const { requestResetOtp, resetPassword } = useAuth();
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,13 +22,35 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    if (!email.trim() || !newPassword) {
-      setError("Please enter your account email and new password.");
+    if (!email.trim()) {
+      setError("Please enter your account email.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await requestResetOtp(email.trim());
+      setSuccess("An OTP has been sent to your email address.");
+      setStep(2);
+    } catch (err: any) {
+      setError(err.message || "Failed to request OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!otp.trim() || !newPassword) {
+      setError("Please enter the OTP and your new password.");
       return;
     }
 
@@ -43,13 +67,13 @@ export default function ForgotPasswordPage() {
 
     try {
       setLoading(true);
-      await resetPassword(email.trim(), newPassword);
+      await resetPassword(email.trim(), otp.trim(), newPassword);
       setSuccess("Password updated successfully! Redirecting to your dashboard...");
       setTimeout(() => {
         router.push("/dashboard");
       }, 1200);
     } catch (err: any) {
-      setError(err.message || "Failed to reset password. Please verify your email.");
+      setError(err.message || "Failed to reset password. Please verify your OTP.");
     } finally {
       setLoading(false);
     }
@@ -93,7 +117,7 @@ export default function ForgotPasswordPage() {
           </Link>
           <h1 className="text-2xl font-bold text-white tracking-tight">Reset Password</h1>
           <p className="text-xs text-white/50 mt-1">
-            Already have an account? Enter your email and choose a new password.
+            {step === 1 ? "Enter your email to receive an OTP." : "Enter the OTP sent to your email and your new password."}
           </p>
         </div>
 
@@ -120,98 +144,133 @@ export default function ForgotPasswordPage() {
           </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
-              Registered Email Address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
-              New Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="At least 8 chars with uppercase, lowercase, number & symbol"
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {newPassword.length > 0 && (
-              <div className="mt-2 text-[11px] grid grid-cols-2 gap-1.5 text-white/50 bg-white/5 p-2.5 rounded-lg border border-white/5">
-                <span className={newPassword.length >= 8 ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {newPassword.length >= 8 ? "✓" : "○"} 8+ characters
-                </span>
-                <span className={/[A-Z]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/[A-Z]/.test(newPassword) ? "✓" : "○"} Uppercase letter
-                </span>
-                <span className={/[a-z]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/[a-z]/.test(newPassword) ? "✓" : "○"} Lowercase letter
-                </span>
-                <span className={/\d/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/\d/.test(newPassword) ? "✓" : "○"} Number (0-9)
-                </span>
-                <span className={/[@$!%*?&]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/[@$!%*?&]/.test(newPassword) ? "✓" : "○"} Symbol (@$!%*?&)
-                </span>
+        {step === 1 ? (
+          <form onSubmit={handleRequestOtp} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
+                Registered Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
+                />
               </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
-              Confirm New Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat new password"
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
-              />
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-4 py-3 bg-[#27ff9a] hover:bg-[#1fe388] text-black font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(39,255,154,0.3)] hover:shadow-[0_0_25px_rgba(39,255,154,0.45)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                Update Password &amp; Sign In <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4 py-3 bg-[#27ff9a] hover:bg-[#1fe388] text-black font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(39,255,154,0.3)] hover:shadow-[0_0_25px_rgba(39,255,154,0.45)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Request OTP <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
+                One-Time Password (OTP)
+              </label>
+              <div className="relative">
+                <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  type="text"
+                  required
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
+                New Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 chars with uppercase, lowercase, number & symbol"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-10 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {newPassword.length > 0 && (
+                <div className="mt-2 text-[11px] grid grid-cols-2 gap-1.5 text-white/50 bg-white/5 p-2.5 rounded-lg border border-white/5">
+                  <span className={newPassword.length >= 8 ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                    {newPassword.length >= 8 ? "✓" : "○"} 8+ characters
+                  </span>
+                  <span className={/[A-Z]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                    {/[A-Z]/.test(newPassword) ? "✓" : "○"} Uppercase letter
+                  </span>
+                  <span className={/[a-z]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                    {/[a-z]/.test(newPassword) ? "✓" : "○"} Lowercase letter
+                  </span>
+                  <span className={/\d/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                    {/\d/.test(newPassword) ? "✓" : "○"} Number (0-9)
+                  </span>
+                  <span className={/[@$!%*?&]/.test(newPassword) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                    {/[@$!%*?&]/.test(newPassword) ? "✓" : "○"} Symbol (@$!%*?&)
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/60 mb-2">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat new password"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#27ff9a]/50 focus:ring-1 focus:ring-[#27ff9a]/30 transition-all"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4 py-3 bg-[#27ff9a] hover:bg-[#1fe388] text-black font-bold text-sm rounded-xl transition-all shadow-[0_0_20px_rgba(39,255,154,0.3)] hover:shadow-[0_0_25px_rgba(39,255,154,0.45)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Update Password &amp; Sign In <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        )}
 
         <div className="mt-8 flex items-center justify-between text-xs text-white/50">
           <Link

@@ -28,6 +28,8 @@ export interface IUser extends Document {
     compactDensity?: boolean;
     liveForex?: boolean;
   } | any;
+  resetPasswordOtp?: string;
+  resetPasswordOtpExpiry?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -97,6 +99,12 @@ const userSchema = new Schema<IUser>(
         theme: "system",
         acousticFeedback: true,
       },
+    },
+    resetPasswordOtp: {
+      type: String,
+    },
+    resetPasswordOtpExpiry: {
+      type: Date,
     },
   },
   {

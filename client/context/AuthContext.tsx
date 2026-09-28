@@ -8,6 +8,7 @@ import {
   removeAuthToken,
   loginUser,
   registerUser,
+  requestPasswordResetOtp,
   forgotPasswordUser,
   getMe,
 } from "../lib/api";
@@ -19,7 +20,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string, phone?: string) => Promise<void>;
-  resetPassword: (email: string, newPassword: string) => Promise<void>;
+  requestResetOtp: (email: string) => Promise<void>;
+  resetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -77,8 +79,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const resetPassword = async (email: string, newPassword: string) => {
-    const res = await forgotPasswordUser({ email, newPassword });
+  const requestResetOtp = async (email: string) => {
+    await requestPasswordResetOtp({ email });
+  };
+
+  const resetPassword = async (email: string, otp: string, newPassword: string) => {
+    const res = await forgotPasswordUser({ email, otp, newPassword });
     if (res.token && res.user) {
       setToken(res.token);
       setUser(res.user);
@@ -122,6 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user && !!token,
         login,
         register,
+        requestResetOtp,
         resetPassword,
         logout,
         refreshUser,

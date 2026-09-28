@@ -189,12 +189,56 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const forgotPassword = async (req: Request, res: Response) => {
+export const requestPasswordResetOtp = async (req: Request, res: Response) => {
   try {
-    const { email, newPassword } = req.body;
+    const { email } = req.body;
 
     if (!email || !email.trim()) {
       return res.status(400).json({ success: false, error: "Email is required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "No account found with this email address",
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpiry = otpExpiry;
+    await user.save();
+
+    console.log(`[DEV ONLY] OTP for ${normalizedEmail} is: ${otp}`);
+
+    return res.json({
+      success: true,
+      message: "An OTP has been sent to your email address.",
+    });
+  } catch (error: any) {
+    console.error("Request OTP error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to process OTP request",
+    });
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, error: "Email is required" });
+    }
+
+    if (!otp || !otp.trim()) {
+      return res.status(400).json({ success: false, error: "OTP is required" });
     }
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -215,10 +259,27 @@ export const forgotPassword = async (req: Request, res: Response) => {
       });
     }
 
-    // Hash password with bcrypt and update directly to prevent legacy subdocument validation issues
+    if (!user.resetPasswordOtp || user.resetPasswordOtp !== otp.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid OTP",
+      });
+    }
+
+    if (!user.resetPasswordOtpExpiry || user.resetPasswordOtpExpiry < new Date()) {
+      return res.status(400).json({
+        success: false,
+        error: "OTP has expired. Please request a new one.",
+      });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-    await User.updateOne({ _id: user._id }, { $set: { password: hashedPassword } });
+    
+    await User.updateOne({ _id: user._id }, { 
+      $set: { password: hashedPassword },
+      $unset: { resetPasswordOtp: "", resetPasswordOtpExpiry: "" }
+    });
 
     const token = generateToken({
       id: user._id.toString(),
