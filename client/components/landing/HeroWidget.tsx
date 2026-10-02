@@ -11,7 +11,7 @@ export default function HeroWidget() {
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-        className="flex flex-col md:flex-row w-full h-[400px] bg-[#121214] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+        className="flex flex-col md:flex-row w-full h-auto md:h-[400px] bg-[#121214] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
       >
         {/* Left Pane: Smart Input */}
         <div className="w-full md:w-1/2 p-6 flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative">

@@ -3,13 +3,14 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Clock, Users, UserPlus, Settings, LogOut, Plus, Bell, HelpCircle } from "lucide-react";
+import { LayoutDashboard, Clock, Users, UserPlus, Settings, LogOut, Plus, Bell, HelpCircle, Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -35,8 +36,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-56 border-r border-white/10 bg-[#0f0f0f] flex flex-col justify-between shrink-0">
+      <aside className={`fixed md:relative z-50 w-56 h-full border-r border-white/10 bg-[#0f0f0f] flex flex-col justify-between shrink-0 transition-transform duration-300 ${
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      }`}>
         <div>
           {/* Logo / Header */}
           <div className="p-4 border-b border-white/5">
@@ -98,13 +109,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative bg-[#0a0a0a]">
         {/* Top Navbar */}
-        <header className="h-16 flex items-center justify-between px-8 border-b border-white/5 shrink-0 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-md z-20">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm font-bold text-white border-b-2 border-[#b2f5d1] pb-5 translate-y-[10px]">Overview</Link>
+        <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-white/5 shrink-0 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-md z-20">
+          <div className="flex items-center gap-4 md:gap-6">
+            <button 
+              className="md:hidden p-2 text-white/70 hover:text-white"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link href="/dashboard" className="text-sm font-bold text-white border-b-2 border-[#b2f5d1] pb-5 translate-y-[10px] hidden sm:block">Overview</Link>
           </div>
           
           {pathname === '/dashboard/groups' && (
-            <div className="absolute left-1/2 -translate-x-1/2">
+            <div className="hidden md:block absolute left-1/2 -translate-x-1/2">
               <input type="text" placeholder="Search groups by name..." className="bg-transparent border border-white/10 rounded-full py-1.5 px-5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 w-80 transition-colors bg-white/5" />
             </div>
           )}
@@ -120,7 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {children}
         </div>
       </main>

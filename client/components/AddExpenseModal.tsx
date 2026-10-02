@@ -340,7 +340,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-2">
                     <CreditCard size={14} /> Total Amount
@@ -372,7 +372,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-2">
                     <Tag size={14} /> Category

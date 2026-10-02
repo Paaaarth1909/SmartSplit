@@ -5,10 +5,18 @@ import { motion } from 'framer-motion';
 import { LiquidButton } from '../ui/button';
 import { Safari } from '../ui/safari';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import DotPattern from '../ui/dot-pattern';
 
 export default function HeroSection() {
   return (
     <section className="relative w-full pt-48 pb-20 flex flex-col items-center justify-center px-4 text-center">
+      <DotPattern
+        className={cn(
+          "[mask-image:radial-gradient(1200px_circle_at_center,white,transparent)]",
+          "fill-[#27ff9a]/40"
+        )}
+      />
       {/* Background radial glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/[0.03] rounded-full blur-[120px] pointer-events-none" />
 

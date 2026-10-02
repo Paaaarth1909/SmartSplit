@@ -78,7 +78,7 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
         <button className="btn" onClick={onBack} style={{ background: 'rgba(255,255,255,0.05)' }}>
           <ArrowLeft size={18} /> Back to Groups
         </button>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="flex flex-col sm:flex-row gap-3">
           <button className="btn btn-primary" onClick={() => setShowExpenseModal(true)}>
             <Plus size={16} /> Add Expense
           </button>
@@ -92,13 +92,13 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
         <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{group.name}</h2>
         {group.description && <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{group.description}</p>}
         
-        <div style={{ display: 'flex', gap: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem' }}>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-8 text-[0.9rem] text-[var(--text-secondary)] border-t border-[var(--border-subtle)] pt-6">
           <div><strong>Created:</strong> {new Date(group.createdAt).toLocaleDateString()}</div>
           <div><strong>Total Members:</strong> {group.members.length}</div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 items-start">
         
         {/* Members List */}
         <div className="glass-panel" style={{ padding: '1.5rem' }}>
