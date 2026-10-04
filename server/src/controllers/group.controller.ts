@@ -563,7 +563,7 @@ export const updateGroup = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-    const userId = (req as any).user.id;
+    const userId = (req as any).user?.id || (req as any).user?._id?.toString();
 
     if (!name || typeof name !== "string") {
       return res.status(400).json({ error: "Group name is required" });
@@ -574,11 +574,18 @@ export const updateGroup = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Group not found" });
     }
 
+    const userEmail = ((req as any).user?.email || "").toLowerCase().trim();
+    const userPhone = ((req as any).user?.phone || "").trim();
+
     const isMember = group.members.some(
-      (m) => m.email === (req as any).user.email || m.phone === (req as any).user.phone
+      (m) =>
+        (m.email && m.email.toLowerCase().trim() === userEmail) ||
+        (m.phone && m.phone.trim() === userPhone)
     );
 
-    if (!isMember && group.createdBy.toString() !== userId) {
+    const isCreator = Boolean(group.createdBy && group.createdBy.toString() === userId);
+
+    if (!isMember && !isCreator) {
       return res.status(403).json({ error: "Not authorized to update this group" });
     }
 

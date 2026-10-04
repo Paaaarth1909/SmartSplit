@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { Lock, Mail, ArrowRight, Eye, EyeOff, KeyRound, CheckCircle2, ShieldCheck } from "lucide-react";
-import DotGrid from "@/components/DotGrid";
+import DotPattern from "@/components/ui/dot-pattern";
+import { cn } from "@/lib/utils";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -34,8 +35,9 @@ export default function ForgotPasswordPage() {
 
     try {
       setLoading(true);
-      await requestResetOtp(email.trim());
-      setSuccess("An OTP has been sent to your email address.");
+      const res = await requestResetOtp(email.trim());
+      setSuccess(res?.message || "An OTP has been sent to your email address. Please check your inbox.");
+      setOtp("");
       setStep(2);
     } catch (err: any) {
       setError(err.message || "Failed to request OTP.");
@@ -81,20 +83,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="relative min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 selection:bg-[#27ff9a]/30 overflow-hidden">
-      {/* Background DotGrid */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-        <DotGrid
-          dotSize={2}
-          gap={16}
-          baseColor="#27ff9a"
-          activeColor="#27ff9a"
-          proximity={120}
-          shockRadius={250}
-          shockStrength={5}
-          resistance={750}
-          returnDuration={1.5}
-        />
-      </div>
+      {/* Background DotPattern */}
+      <DotPattern
+        className={cn(
+          "[mask-image:radial-gradient(600px_circle_at_center,white,transparent)]",
+          "fill-[#27ff9a]/30"
+        )}
+      />
 
       {/* Ambient background glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[400px] bg-[#27ff9a]/[0.05] rounded-full blur-[140px] pointer-events-none" />

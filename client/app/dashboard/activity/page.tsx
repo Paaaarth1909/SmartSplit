@@ -37,8 +37,10 @@ export default function RecentActivityPage() {
 
     if (user) {
       fetchActivity();
+    } else if (!isAuthLoading) {
+      setIsLoading(false);
     }
-  }, [user]);
+  }, [user, isAuthLoading]);
 
   if (isAuthLoading || (isLoading && !activityData)) {
     return (
@@ -48,12 +50,23 @@ export default function RecentActivityPage() {
     );
   }
 
-  const initialData = activityData || {
-    totalBalance: 0,
-    youOwe: 0,
-    youAreOwed: 0,
-    activities: [],
-    frequentConnections: []
+  const initialData = {
+    totalBalance: activityData?.totalBalance ?? 0,
+    youOwe: activityData?.youOwe ?? 0,
+    youAreOwed: activityData?.youAreOwed ?? 0,
+    activities: Array.isArray(activityData?.activities)
+      ? activityData.activities
+      : Array.isArray(activityData?.recentActivity)
+        ? activityData.recentActivity
+        : [],
+    recentActivity: Array.isArray(activityData?.recentActivity)
+      ? activityData.recentActivity
+      : Array.isArray(activityData?.activities)
+        ? activityData.activities
+        : [],
+    frequentConnections: Array.isArray(activityData?.frequentConnections)
+      ? activityData.frequentConnections
+      : []
   };
 
   return (

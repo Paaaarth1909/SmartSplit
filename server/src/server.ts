@@ -38,6 +38,14 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", message: "Server is operational" });
 });
 
+// Catch unhandled API routes and return JSON instead of default Express HTML error page
+app.all("/api/*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+  });
+});
+
 app.use(errorHandler);
 
 const httpServer = http.createServer(app);

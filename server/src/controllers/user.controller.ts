@@ -307,6 +307,7 @@ async function calculateUserFinancials(userId: string, userEmail: string, userPh
     allExpenses,
     myIdSet,
     memberIdToUserId,
+    memberNameMap,
     totalOwe,
     totalOwed,
     netBalance,
@@ -516,6 +517,7 @@ export const getRecentActivity = async (req: Request, res: Response) => {
       allExpenses,
       myIdSet,
       memberIdToUserId,
+      memberNameMap,
       totalOwe,
       totalOwed,
       netBalance,
@@ -534,11 +536,11 @@ export const getRecentActivity = async (req: Request, res: Response) => {
 
       if (isPayer) {
         let amountOwedToUser = 0;
-        exp.splits.forEach(split => {
+        (exp.splits || []).forEach(split => {
           const sId = (split.user as any)?._id?.toString() || (split.user as any)?.toString() || '';
           const sCanonical = memberIdToUserId.get(sId) || sId;
           if (!myIdSet.has(sId) && !myIdSet.has(sCanonical)) {
-            amountOwedToUser += split.amount;
+            amountOwedToUser += (split.amount || 0);
           }
         });
 
@@ -547,7 +549,7 @@ export const getRecentActivity = async (req: Request, res: Response) => {
           userShare = amountOwedToUser;
         }
       } else {
-        const mySplit = exp.splits.find(s => {
+        const mySplit = (exp.splits || []).find(s => {
           const sId = (s.user as any)?._id?.toString() || (s.user as any)?.toString() || '';
           const sCanonical = memberIdToUserId.get(sId) || sId;
           return myIdSet.has(sId) || myIdSet.has(sCanonical);
@@ -555,18 +557,19 @@ export const getRecentActivity = async (req: Request, res: Response) => {
 
         if (mySplit) {
           type = isSettlement ? 'settled' : 'owe';
-          userShare = mySplit.amount;
+          userShare = mySplit.amount || 0;
         }
       }
 
       return {
         id: exp._id,
         title: exp.description,
+        description: exp.description,
         category: exp.category,
         amount: exp.amount,
         date: exp.date,
         groupName: (exp.group as any)?.name || 'Group',
-        payerName: isPayer ? 'You' : ((exp.paidBy as any)?.fullName || 'Member'),
+        payerName: isPayer ? 'You' : ((exp.paidBy as any)?.fullName || memberNameMap?.get(payerCanonical) || memberNameMap?.get(rawPayerId) || 'Member'),
         type,
         userShare,
         isSettlement
@@ -586,6 +589,7 @@ export const getRecentActivity = async (req: Request, res: Response) => {
         totalBalance,
         youOwe: totalOwe,
         youAreOwed: totalOwed,
+        activities,
         recentActivity: activities,
         frequentConnections
       }

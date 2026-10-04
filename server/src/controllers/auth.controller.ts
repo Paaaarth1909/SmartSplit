@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 import { generateToken } from "../utils/jwt.js";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
+import { sendOtpEmail } from "../services/email.service.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -214,11 +215,20 @@ export const requestPasswordResetOtp = async (req: Request, res: Response) => {
     user.resetPasswordOtpExpiry = otpExpiry;
     await user.save();
 
-    console.log(`[DEV ONLY] OTP for ${normalizedEmail} is: ${otp}`);
+    console.log(`[AUTH] Password reset OTP for ${normalizedEmail} is: ${otp}`);
+
+    const emailResult = await sendOtpEmail(normalizedEmail, otp);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: emailResult.error || "Failed to dispatch OTP email. Please ensure your SMTP configuration is active and correct on the server.",
+      });
+    }
 
     return res.json({
       success: true,
-      message: "An OTP has been sent to your email address.",
+      message: "An OTP has been sent to your email address. Please check your inbox (and spam folder).",
     });
   } catch (error: any) {
     console.error("Request OTP error:", error);

@@ -19,10 +19,8 @@ export interface OcrResult {
 }
 
 const MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro"
+  "gemini-3.8-flash",
+  "gemini-3.5-flash-lite"
 ];
 
 export const processReceiptImage = async (
@@ -59,17 +57,12 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
         model: modelName,
         contents: [
           {
-            role: "user",
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  data: imageBuffer.toString("base64"),
-                  mimeType: mimeType || "image/jpeg"
-                }
-              }
-            ]
-          }
+            inlineData: {
+              data: imageBuffer.toString("base64"),
+              mimeType: mimeType || "image/jpeg"
+            }
+          },
+          prompt
         ]
       });
       if (response && response.text) {
@@ -77,6 +70,7 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
         break;
       }
     } catch (err: any) {
+      console.warn(`[OCR] Gemini model ${modelName} failed:`, err?.message || err);
       lastError = err;
     }
   }
@@ -87,10 +81,16 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
     );
   }
 
-  const cleanedText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+  const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+  let jsonString = cleanedText;
+  const firstBrace = cleanedText.indexOf("{");
+  const lastBrace = cleanedText.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
+  }
 
   try {
-    const parsed = JSON.parse(cleanedText);
+    const parsed = JSON.parse(jsonString);
     return {
       merchant: parsed.merchant || "Unknown Merchant",
       date: parsed.date || new Date().toISOString().split("T")[0],
