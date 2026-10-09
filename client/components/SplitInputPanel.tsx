@@ -51,6 +51,8 @@ const SplitInputPanel: React.FC<Props> = ({
     // Emit these initial values to the parent immediately!
     const payload = initial.map((p) => {
       switch (splitType) {
+        case 'equal':
+          return { userId: p.userId };
         case 'exact':
           return { userId: p.userId, amount: p.amount };
         case 'shares':
@@ -67,6 +69,8 @@ const SplitInputPanel: React.FC<Props> = ({
     (parts: ParticipantState[]) => {
       const payload = parts.map((p) => {
         switch (splitType) {
+          case 'equal':
+            return { userId: p.userId };
           case 'exact':
             return { userId: p.userId, amount: p.amount };
           case 'shares':
@@ -89,6 +93,8 @@ const SplitInputPanel: React.FC<Props> = ({
       try {
         const payload = participants.map((p) => {
           switch (splitType) {
+            case 'equal':
+              return { userId: p.userId };
             case 'exact':
               return { userId: p.userId, amount: p.amount };
             case 'shares':
@@ -136,14 +142,18 @@ const SplitInputPanel: React.FC<Props> = ({
   const totalShares = participants.reduce((s, p) => s + p.shares, 0);
 
   const isValid =
-    splitType === 'exact'
+    splitType === 'equal'
+      ? true
+      : splitType === 'exact'
       ? Math.abs(sumAmounts - totalAmount) < 0.02
       : splitType === 'percentage'
         ? Math.abs(sumPct - 100) < 0.1
         : totalShares > 0;
 
   const validationMsg =
-    splitType === 'exact'
+    splitType === 'equal'
+      ? 'Split equally among participants'
+      : splitType === 'exact'
       ? `${sumAmounts.toFixed(2)} / ${totalAmount.toFixed(2)}`
       : splitType === 'percentage'
         ? `${sumPct.toFixed(1)}% / 100%`
@@ -156,7 +166,9 @@ const SplitInputPanel: React.FC<Props> = ({
       <div className="grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/5 bg-white/5 text-xs font-bold uppercase tracking-wider text-white/50">
         <div className="col-span-5">Participant</div>
         <div className="col-span-4 text-center">
-          {splitType === 'exact'
+          {splitType === 'equal'
+            ? 'Split'
+            : splitType === 'exact'
             ? 'Amount'
             : splitType === 'shares'
               ? 'Shares'
@@ -181,6 +193,10 @@ const SplitInputPanel: React.FC<Props> = ({
 
               {/* Input control */}
               <div className="col-span-4 flex justify-center">
+                {splitType === 'equal' && (
+                  <span className="text-sm text-white/50 italic py-2">Equal share</span>
+                )}
+
                 {splitType === 'exact' && (
                   <div className="relative w-28">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 font-medium">$</span>

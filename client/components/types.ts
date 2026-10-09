@@ -16,7 +16,7 @@ export interface Group {
 
 // ── Split & Expense Types ──────────────────────────────────────────
 
-export type SplitType = 'exact' | 'shares' | 'percentage';
+export type SplitType = 'equal' | 'exact' | 'shares' | 'percentage';
 
 export interface SplitParticipant {
   userId: string;
