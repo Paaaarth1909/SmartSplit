@@ -20,12 +20,9 @@ export interface OcrResult {
 
 const MODELS = [
   "gemini-3.8-flash",
-<<<<<<< HEAD
-  "gemini-3.5-flash-lite"
-=======
   "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
   "gemini-flash-latest"
->>>>>>> 7421c18 (feat: update AI models, add Groq integration, and improve expense parsing and validation logic)
 ];
 
 export const processReceiptImage = async (
