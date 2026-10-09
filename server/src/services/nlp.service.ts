@@ -13,7 +13,12 @@ export interface ParsedNlpExpense {
 
 const MODELS = [
   "gemini-3.8-flash",
+<<<<<<< HEAD
   "gemini-3.5-flash-lite"
+=======
+  "gemini-3.5-flash",
+  "gemini-flash-latest"
+>>>>>>> 7421c18 (feat: update AI models, add Groq integration, and improve expense parsing and validation logic)
 ];
 
 export const parseNaturalLanguageInput = async (
@@ -88,13 +93,22 @@ Return pure JSON only. Do not add markdown codeblock formatting if possible.`;
     jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
   }
 
+  const parseNumber = (val: any): number => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const num = parseFloat(val.replace(/[^0-9.-]+/g, ""));
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  };
+
   try {
     const parsed = JSON.parse(jsonString);
     const validSplitTypes = ["equal", "percentage", "fixed", "itemized"];
     return {
       title: parsed.title || "Expense",
       merchant: parsed.merchant || parsed.title || "General Merchant",
-      amount: typeof parsed.amount === "number" ? parsed.amount : 0,
+      amount: parseNumber(parsed.amount),
       payer: parsed.payer || "You",
       participants: Array.isArray(parsed.participants) ? parsed.participants : ["You"],
       splitType: validSplitTypes.includes(parsed.splitType) ? parsed.splitType : "equal",

@@ -20,13 +20,19 @@ export interface OcrResult {
 
 const MODELS = [
   "gemini-3.8-flash",
+<<<<<<< HEAD
   "gemini-3.5-flash-lite"
+=======
+  "gemini-3.5-flash",
+  "gemini-flash-latest"
+>>>>>>> 7421c18 (feat: update AI models, add Groq integration, and improve expense parsing and validation logic)
 ];
 
 export const processReceiptImage = async (
   imageBuffer: Buffer,
   mimeType: string
 ): Promise<OcrResult> => {
+  // Use Gemini API Key for OCR since Groq Vision models are offline
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is not configured");
@@ -89,6 +95,15 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
     jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
   }
 
+  const parseNumber = (val: any): number => {
+    if (typeof val === "number") return val;
+    if (typeof val === "string") {
+      const num = parseFloat(val.replace(/[^0-9.-]+/g, ""));
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  };
+
   try {
     const parsed = JSON.parse(jsonString);
     return {
@@ -97,15 +112,15 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
       currency: parsed.currency ? String(parsed.currency).toUpperCase() : "USD",
       category: parsed.category || "General",
       items: Array.isArray(parsed.items)
-        ? parsed.items.map((item: { name?: string; price?: number }) => ({
+        ? parsed.items.map((item: { name?: string; price?: any }) => ({
           name: item.name || "Item",
-          price: typeof item.price === "number" ? item.price : 0
+          price: parseNumber(item.price)
         }))
         : [],
-      subtotal: typeof parsed.subtotal === "number" ? parsed.subtotal : 0,
-      tax: typeof parsed.tax === "number" ? parsed.tax : 0,
-      tip: typeof parsed.tip === "number" ? parsed.tip : 0,
-      total: typeof parsed.total === "number" ? parsed.total : 0
+      subtotal: parseNumber(parsed.subtotal),
+      tax: parseNumber(parsed.tax),
+      tip: parseNumber(parsed.tip),
+      total: parseNumber(parsed.total)
     };
   } catch (err) {
     throw new Error("Failed to parse receipt JSON response from Gemini Vision");

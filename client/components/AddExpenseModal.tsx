@@ -73,6 +73,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
   const canProceedStep1 = description.trim().length > 0 && amount > 0 && paidBy;
   const canProceedStep2 = (() => {
     if (participants.length === 0) return false;
+    if (splitType === 'equal') return true;
     if (splitType === 'exact') {
       const sum = participants.reduce((s, p) => s + (p.amount ?? 0), 0);
       return Math.abs(sum - amount) < 0.02;
@@ -89,8 +90,12 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
 
   // ── AI Smart Input Handlers ────────────────────────────────────
   const processAIResponse = (data: any) => {
-    if (data.amount) setAmount(data.amount);
-    if (data.description || data.merchantName) setDescription(data.description || data.merchantName);
+    const aiAmount = data.amount || data.total;
+    if (aiAmount) setAmount(aiAmount);
+
+    const aiDescription = data.description || data.title || data.merchantName || data.merchant;
+    if (aiDescription) setDescription(aiDescription);
+
     if (data.category) setCategory(data.category);
     if (data.date) setDate(data.date);
     if (data.imageHash) setImageHash(data.imageHash);
