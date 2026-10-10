@@ -184,11 +184,11 @@ const SplitInputPanel: React.FC<Props> = ({
           return (
             <div key={p.userId} className="grid grid-cols-12 gap-4 px-5 py-4 items-center">
               {/* Avatar + name */}
-              <div className="col-span-5 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold text-[#b2f5d1]">
+              <div className="col-span-5 flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full bg-white/10 flex items-center justify-center text-sm font-bold text-[#b2f5d1] shrink-0 aspect-square">
                   {p.name.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-semibold text-white">{p.name}</span>
+                <span className="text-sm font-semibold text-white break-words min-w-0">{p.name}</span>
               </div>
 
               {/* Input control */}

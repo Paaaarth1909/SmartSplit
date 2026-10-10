@@ -310,7 +310,7 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden ${
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 aspect-square ${
                         isSelected ? 'bg-[#b2f5d1]/20 text-[#b2f5d1]' : 'bg-[#1a1a1c] text-white/50 border border-white/10'
                       }`}>
                         {candidate.avatar ? (
@@ -348,26 +348,30 @@ export default function AddGroupMemberModal({ group, onClose, onMembersAdded }: 
           </div>
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-white/5 flex items-center justify-between">
-          <div className="text-xs text-white/40">
-            {selectedUserIds.size > 0 && `${selectedUserIds.size} user(s) selected`}
+        <div className="p-4 sm:p-6 border-t border-white/5 bg-white/5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="text-xs text-white/40 text-center sm:text-left">
+            {selectedUserIds.size > 0 
+              ? `${selectedUserIds.size} user${selectedUserIds.size > 1 ? 's' : ''} selected` 
+              : 'Select users from list'}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             <button 
-              className="px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 hover:text-white text-sm font-bold transition-colors cursor-pointer"
+              type="button"
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-white/10 text-white/60 hover:bg-white/5 hover:text-white text-sm font-bold transition-colors cursor-pointer text-center"
               onClick={onClose}
             >
               Cancel
             </button>
             <button 
-              className="px-6 py-2.5 rounded-xl bg-[#b2f5d1] hover:bg-[#9de4c2] text-black text-sm font-bold transition-all shadow-[0_0_15px_rgba(178,245,209,0.2)] hover:shadow-[0_0_20px_rgba(178,245,209,0.4)] flex items-center gap-2 disabled:opacity-50 disabled:shadow-none cursor-pointer"
+              type="button"
+              className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-[#b2f5d1] hover:bg-[#9de4c2] text-black text-sm font-bold transition-all shadow-[0_0_15px_rgba(178,245,209,0.2)] hover:shadow-[0_0_20px_rgba(178,245,209,0.4)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none cursor-pointer whitespace-nowrap shrink-0"
               onClick={handleSubmit}
               disabled={selectedUserIds.size === 0 || isSubmitting}
             >
               {isSubmitting ? (
                 <><Loader2 size={16} className="animate-spin" /> Adding...</>
               ) : (
-                `Add ${selectedUserIds.size > 0 ? selectedUserIds.size : ''} to Group`
+                `Add ${selectedUserIds.size > 0 ? `(${selectedUserIds.size}) ` : ''}to Group`
               )}
             </button>
           </div>

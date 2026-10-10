@@ -113,24 +113,24 @@ export default function FriendsView({ initialFriends }: FriendsViewProps) {
           <div className="flex flex-col gap-3 mt-4">
             <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Search Results</h4>
             {searchResults.map((user) => (
-              <div key={user._id} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center overflow-hidden">
+              <div key={user._id} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-colors gap-3">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 pr-2">
+                  <div className="w-10 h-10 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center overflow-hidden shrink-0 aspect-square">
                     {user.avatar ? (
                       <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <UserCircle2 className="w-6 h-6 text-white/40" />
                     )}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{user.fullName}</h4>
-                    <p className="text-xs text-white/40">{user.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-bold text-white truncate">{user.fullName}</h4>
+                    <p className="text-xs text-white/40 truncate">{user.email}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => handleAddFriend(user._id, user.fullName)}
                   disabled={loadingActionId === user._id}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap cursor-pointer"
                 >
                   {loadingActionId === user._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   Add Friend
@@ -161,24 +161,24 @@ export default function FriendsView({ initialFriends }: FriendsViewProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {friends.map((friend) => (
-              <div key={friend._id} className="flex items-center justify-between p-4 bg-[#1a1a1c] border border-white/5 rounded-2xl">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#0a0a0a] border border-[#b2f5d1]/20 flex items-center justify-center text-[#b2f5d1] font-bold overflow-hidden shadow-[0_0_15px_rgba(178,245,209,0.1)]">
+              <div key={friend._id} className="flex items-center justify-between p-4 bg-[#1a1a1c] border border-white/5 rounded-2xl gap-3">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 pr-2">
+                  <div className="w-12 h-12 rounded-full bg-[#0a0a0a] border border-[#b2f5d1]/20 flex items-center justify-center text-[#b2f5d1] font-bold overflow-hidden shadow-[0_0_15px_rgba(178,245,209,0.1)] shrink-0 aspect-square">
                     {friend.avatar ? (
                       <img src={friend.avatar} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
                       friend.fullName.charAt(0).toUpperCase()
                     )}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{friend.fullName}</h4>
-                    <p className="text-xs text-white/40">{friend.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-bold text-white truncate">{friend.fullName}</h4>
+                    <p className="text-xs text-white/40 truncate">{friend.email}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => handleRemoveFriend(friend._id)}
                   disabled={loadingActionId === friend._id}
-                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center text-white/40 transition-colors disabled:opacity-50"
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center text-white/40 transition-colors disabled:opacity-50 shrink-0 cursor-pointer"
                   title="Remove Friend"
                 >
                   {loadingActionId === friend._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserMinus className="w-4 h-4" />}

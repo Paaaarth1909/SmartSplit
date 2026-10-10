@@ -319,7 +319,7 @@ export default function GroupDetailsView({
             {group.members.map((member: any, i: number) => (
               <div key={i} className="flex items-center justify-between group-member-item">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1a1a1c] flex items-center justify-center text-xs text-white font-bold border border-white/5">
+                  <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full bg-[#1a1a1c] flex items-center justify-center text-xs text-white font-bold border border-white/5 shrink-0 aspect-square">
                     {member.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
@@ -491,77 +491,89 @@ export default function GroupDetailsView({
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Live Chat */}
+      {/* RIGHT COLUMN: Live Chat (Full-screen overlay on mobile, right-column sidebar on desktop) */}
       {isChatOpen ? (
-        <div className="w-full lg:w-[320px] flex flex-col shrink-0 bg-[#0f0f0f] border-l border-white/10 h-full relative">
-          <div className="p-5 border-b border-white/5 bg-[#0a0a0a] flex justify-between items-center">
+        <div className="fixed inset-0 z-50 lg:relative lg:inset-auto lg:z-auto w-full lg:w-[320px] flex flex-col shrink-0 bg-[#0a0a0a] lg:bg-[#0f0f0f] border-none lg:border-l lg:border-white/10 h-full overflow-hidden animate-in fade-in duration-200">
+          <div className="p-4 sm:p-5 border-b border-white/5 bg-[#0a0a0a] flex justify-between items-center shrink-0">
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">Live Chat</h2>
               <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Group Chat: {group.name}</p>
             </div>
-            <button onClick={() => setIsChatOpen(false)} className="text-white/40 hover:text-white transition-colors">
+            <button 
+              type="button"
+              onClick={() => setIsChatOpen(false)} 
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              title="Close chat"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 custom-scrollbar">
-          {messages.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-xs text-white/30 text-center px-4">
-              Send the first message to start chatting!
-            </div>
-          ) : (
-            messages.map((msg, idx) => {
-              const isMe = msg.senderId === currentUserId || msg.senderName === currentUserName; // Fallback to name if senderId is missing
-              return (
-                <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    {!isMe && (
-                      <div className="w-5 h-5 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-[9px] font-bold text-white/70">
-                        {msg.senderName.charAt(0)}
-                      </div>
-                    )}
-                    <span className="text-[10px] text-white/40 font-medium">
-                      {isMe ? 'You' : msg.senderName}
-                    </span>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4 custom-scrollbar min-h-0 bg-[#0a0a0a]">
+            {messages.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-white/40 gap-2">
+                <MessageSquare className="w-8 h-8 text-white/20 mb-1" />
+                <p className="text-sm font-semibold text-white/60">No messages yet</p>
+                <p className="text-xs text-white/30 max-w-xs">Send the first message to start chatting with group members!</p>
+              </div>
+            ) : (
+              messages.map((msg, idx) => {
+                const isMe = msg.senderId === currentUserId || msg.senderName === currentUserName;
+                return (
+                  <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
+                    <div className="flex items-center gap-1.5 mb-1 px-1">
+                      {!isMe && (
+                        <div className="w-5 h-5 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-[9px] font-bold text-[#b2f5d1] shrink-0 aspect-square">
+                          {(msg.senderName || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-[10px] text-white/40 font-medium">
+                        {isMe ? 'You' : msg.senderName}
+                      </span>
+                    </div>
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm max-w-[85%] break-words leading-relaxed ${
+                      isMe 
+                        ? 'bg-[#b2f5d1] text-black font-medium rounded-tr-sm shadow-[0_0_15px_rgba(178,245,209,0.15)]' 
+                        : 'bg-white/10 text-white rounded-tl-sm border border-white/5'
+                    }`}>
+                      {msg.message}
+                    </div>
                   </div>
-                  <div className={`px-4 py-2.5 rounded-2xl text-sm max-w-[85%] break-words ${isMe ? 'bg-[#b2f5d1] text-black rounded-tr-sm shadow-[0_0_15px_rgba(178,245,209,0.15)]' : 'bg-white/10 text-white/90 rounded-tl-sm border border-white/5'}`}>
-                    {msg.message}
-                  </div>
-                </div>
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-        <div className="p-4 bg-[#0f0f0f] border-t border-white/5 mt-auto">
-          <form onSubmit={handleSendMessage} className="relative flex items-center">
-            <input 
-              type="text" 
-              placeholder="Type a message..." 
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              className="w-full bg-[#1a1a1c] border border-white/10 rounded-xl py-3 pl-4 pr-24 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors"
-            />
-            <div className="absolute right-2 flex items-center gap-1">
-              <button type="button" className="p-2 text-white/40 hover:text-white transition-colors">
-                <Paperclip className="w-4 h-4" />
-              </button>
-              <button 
-                type="submit" 
-                disabled={!chatInput.trim()}
-                className="bg-[#b2f5d1] hover:bg-[#9de4c2] text-black p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
+          <div className="p-3 sm:p-4 bg-[#0f0f0f] border-t border-white/10 shrink-0">
+            <form onSubmit={handleSendMessage} className="relative flex items-center">
+              <input 
+                type="text" 
+                placeholder="Type a message..." 
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                className="w-full bg-[#1a1a1c] border border-white/10 rounded-xl py-3 pl-4 pr-16 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#b2f5d1]/50 transition-colors"
+                autoFocus
+              />
+              <div className="absolute right-2 flex items-center gap-1">
+                <button 
+                  type="submit" 
+                  disabled={!chatInput.trim()}
+                  className="bg-[#b2f5d1] hover:bg-[#9de4c2] text-black p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                  title="Send message"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
       ) : (
         <button 
+          type="button"
           onClick={() => setIsChatOpen(true)}
-          className="absolute bottom-8 right-8 w-14 h-14 bg-[#b2f5d1] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(178,245,209,0.3)] hover:scale-105 hover:bg-[#9de4c2] transition-all z-50 cursor-pointer"
+          className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 w-14 h-14 bg-[#b2f5d1] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(178,245,209,0.35)] hover:scale-105 hover:bg-[#9de4c2] transition-all z-40 cursor-pointer active:scale-95"
+          title="Open group chat"
         >
           <MessageSquare className="w-6 h-6" />
         </button>

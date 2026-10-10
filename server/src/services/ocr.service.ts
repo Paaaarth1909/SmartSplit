@@ -143,9 +143,17 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
   }
 
   if (!responseText) {
-    throw new Error(
-      lastError?.message || "Failed to generate content with both Groq and Gemini Vision APIs"
-    );
+    let errorMsg = lastError?.message || "Failed to generate content with both Groq and Gemini Vision APIs";
+    try {
+      const parsed = JSON.parse(errorMsg);
+      if (parsed?.error?.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch {}
+    if (errorMsg.includes("high demand") || errorMsg.includes("UNAVAILABLE")) {
+      errorMsg = "The AI model is currently experiencing high demand. Please try again in a moment or enter details manually.";
+    }
+    throw new Error(errorMsg);
   }
 
   const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();

@@ -133,9 +133,17 @@ Return pure JSON only. Do not add markdown codeblock formatting if possible.`;
   }
 
   if (!responseText) {
-    throw new Error(
-      lastError?.message || "Failed to parse natural language expense prompt with AI"
-    );
+    let errorMsg = lastError?.message || "Failed to parse natural language expense prompt with AI";
+    try {
+      const parsed = JSON.parse(errorMsg);
+      if (parsed?.error?.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch {}
+    if (errorMsg.includes("high demand") || errorMsg.includes("UNAVAILABLE")) {
+      errorMsg = "The AI model is currently experiencing high demand. Please try again in a moment or enter details manually.";
+    }
+    throw new Error(errorMsg);
   }
 
   const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();

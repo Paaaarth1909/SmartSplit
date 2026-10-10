@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, useScroll, useMotionValueEvent, useTransform } from 'framer-motion';
-
+import React from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { LiquidButton } from '../ui/button';
 import { Frame } from 'lucide-react';
@@ -10,16 +9,6 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
   const { user, isAuthenticated } = useAuth();
-  const { scrollY } = useScroll();
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 50) {
-      setIsScrolled(true);
-    } else {
-      setIsScrolled(false);
-    }
-  });
 
   const userInitial = user?.fullName
     ? user.fullName.charAt(0).toUpperCase()
@@ -31,15 +20,13 @@ export default function Navbar() {
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-full transition-all duration-500 ease-in-out ${
-          isScrolled ? "w-[75%] max-w-4xl py-2" : "w-[90%] max-w-5xl py-3"
-        }`}
+        className="fixed top-6 left-1/2 -translate-x-1/2 z-50 rounded-full w-[92%] sm:w-[90%] max-w-5xl py-2.5 sm:py-3 transition-all duration-300 ease-in-out"
       >
         {/* Background Glass Layers */}
         <div className="absolute top-0 left-0 z-0 h-full w-full rounded-full 
             shadow-[0_0_6px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3px_rgba(0,0,0,0.9),inset_-3px_-3px_0.5px_-3px_rgba(0,0,0,0.85),inset_1px_1px_1px_-0.5px_rgba(0,0,0,0.6),inset_-1px_-1px_1px_-0.5px_rgba(0,0,0,0.6),inset_0_0_6px_6px_rgba(0,0,0,0.12),inset_0_0_2px_2px_rgba(0,0,0,0.06),0_0_12px_rgba(255,255,255,0.15)] 
         transition-all 
-        dark:shadow-[0_0_8px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3.5px_rgba(255,255,255,0.09),inset_-3px_-3px_0.5px_-3.5px_rgba(255,255,255,0.85),inset_1px_1px_1px_-0.5px_rgba(255,255,255,0.6),inset_-1px_-1px_1px_-0.5px_rgba(255,255,255,0.6),inset_0_0_6px_6px_rgba(255,255,255,0.12),inset_0_0_2px_2px_rgba(255,255,255,0.06),0_0_12px_rgba(0,0,0,0.15)] bg-black/40" />
+        dark:shadow-[0_0_8px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3.5px_rgba(255,255,255,0.09),inset_-3px_-3px_0.5px_-3.5px_rgba(255,255,255,0.85),inset_1px_1px_1px_-0.5px_rgba(255,255,255,0.6),inset_-1px_-1px_1px_-0.5px_rgba(255,255,255,0.6),inset_0_0_6px_6px_rgba(255,255,255,0.12),inset_0_0_2px_2px_rgba(255,255,255,0.06),0_0_12px_rgba(0,0,0,0.15)] bg-black/60 backdrop-blur-md" />
         
         <div
           className="absolute top-0 left-0 isolate -z-10 h-full w-full overflow-hidden rounded-full"
@@ -47,37 +34,39 @@ export default function Navbar() {
         />
 
         {/* Content */}
-        <div className={`relative z-10 w-full flex items-center justify-between transition-all duration-500 ${isScrolled ? 'px-4' : 'px-6'}`}>
-          <Link href="/" className="flex items-center gap-2 cursor-pointer">
-            <Frame className="w-5 h-5 text-white" />
-            <span className="text-lg font-bold tracking-tight text-white">SmartSplit <span className="text-[#b2f5d1]">Pro</span></span>
+        <div className="relative z-10 w-full flex items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer shrink-0">
+            <Frame className="w-5 h-5 text-white shrink-0" />
+            <span className="text-base sm:text-lg font-bold tracking-tight text-white whitespace-nowrap">
+              SmartSplit <span className="text-[#b2f5d1]">Pro</span>
+            </span>
           </Link>
 
-          <div className={`hidden md:flex items-center text-sm font-medium text-white/60 transition-all duration-500 ${isScrolled ? 'gap-6 text-xs' : 'gap-8 text-sm'}`}>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/60">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isAuthenticated ? (
               <>
-                <Link href="/dashboard">
-                  <LiquidButton className={`text-white bg-white/10 ${isScrolled ? 'h-8 px-4 text-xs' : ''}`} variant="default" size="default">
+                <Link href="/dashboard" className="shrink-0">
+                  <LiquidButton className="text-white bg-white/10 h-9 px-3.5 sm:px-4 text-xs sm:text-sm whitespace-nowrap" variant="default" size="default">
                     Dashboard
                   </LiquidButton>
                 </Link>
-                <Link href="/dashboard/profile">
-                  <div className={`rounded-full bg-[#27ff9a] text-black font-bold text-xs flex items-center justify-center cursor-pointer shadow-[0_0_10px_rgba(39,255,154,0.3)] ${isScrolled ? "w-7 h-7" : "w-8 h-8"}`}>
+                <Link href="/dashboard/profile" className="shrink-0">
+                  <div className="rounded-full bg-[#27ff9a] text-black font-bold text-xs flex items-center justify-center cursor-pointer shadow-[0_0_10px_rgba(39,255,154,0.3)] w-8 h-8 shrink-0 aspect-square">
                     {userInitial}
                   </div>
                 </Link>
               </>
             ) : (
               <>
-                <Link href="/login" className="text-xs md:text-sm font-medium text-white/70 hover:text-white transition-colors px-3 py-1.5">
+                <Link href="/login" className="text-xs md:text-sm font-medium text-white/70 hover:text-white transition-colors px-2.5 sm:px-3 py-1.5 whitespace-nowrap shrink-0">
                   Sign In
                 </Link>
-                <Link href="/register">
-                  <LiquidButton className={`text-black bg-[#27ff9a] hover:bg-[#1fe388] font-bold ${isScrolled ? 'h-8 px-4 text-xs' : ''}`} variant="default" size="default">
+                <Link href="/register" className="shrink-0">
+                  <LiquidButton className="text-black bg-[#27ff9a] hover:bg-[#1fe388] font-bold h-9 px-3.5 sm:px-4 text-xs sm:text-sm whitespace-nowrap" variant="default" size="default">
                     Sign Up
                   </LiquidButton>
                 </Link>

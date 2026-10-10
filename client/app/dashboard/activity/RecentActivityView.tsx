@@ -155,12 +155,12 @@ export default function RecentActivityView({ initialData }: RecentActivityViewPr
                         key={act.id || act._id || `act-${idx}`} 
                         className="bg-[#121214] border border-white/10 rounded-2xl p-5 flex items-center justify-between hover:border-white/20 transition-all shadow-sm"
                       >
-                        <div className="flex items-center gap-4 min-w-0 pr-4">
-                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${act.isSettlement ? 'bg-[#1a2e22] border-[#b2f5d1]/20' : 'bg-[#1a1a1c] border-white/10'}`}>
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 pr-3">
+                          <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 aspect-square ${act.isSettlement ? 'bg-[#1a2e22] border-[#b2f5d1]/20' : 'bg-[#1a1a1c] border-white/10'}`}>
                             {getCategoryIcon(act.category || act.title)}
                           </div>
-                          <div className="min-w-0">
-                            <h4 className="text-base font-bold text-white tracking-tight truncate">{act.title}</h4>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm sm:text-base font-bold text-white tracking-tight truncate">{act.title}</h4>
                             <div className="flex items-center gap-2 text-xs text-white/50 mt-0.5 flex-wrap">
                               <span>
                                 {act.isSettlement 
@@ -242,12 +242,12 @@ export default function RecentActivityView({ initialData }: RecentActivityViewPr
                    const name = conn.name || 'Friend';
                    
                    return (
-                     <div key={i} className="flex items-center justify-between group">
-                       <div className="flex items-center gap-3">
+                     <div key={i} className="flex items-center justify-between group gap-3">
+                       <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                          <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/70 bg-[#1a1a1c] group-hover:border-white/30 transition-colors">
                            {name.charAt(0).toUpperCase()}
                          </div>
-                         <span className="text-sm font-semibold text-white/90">{name}</span>
+                         <span className="text-sm font-semibold text-white/90 truncate min-w-0">{name}</span>
                        </div>
                        <div className={`text-xs font-bold ${isOwed ? 'text-[#b2f5d1]' : isOwe ? 'text-red-400' : 'text-white/40'}`}>
                          {isOwed ? `+${formatCurrency(netBal)}` : isOwe ? `-${formatCurrency(netBal)}` : 'Settled'}
