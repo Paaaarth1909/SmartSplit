@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Utensils, Plane, CheckCircle2, ShoppingCart, Coffee, Activity, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Utensils, Plane, CheckCircle2, ShoppingCart, Coffee, Activity, Sparkles, Bell } from 'lucide-react';
+import { API_BASE, getAuthHeaders } from '@/lib/api';
 
 interface RecentActivityViewProps {
   initialData?: {
@@ -16,6 +17,29 @@ interface RecentActivityViewProps {
 
 export default function RecentActivityView({ initialData }: RecentActivityViewProps) {
   const [filter, setFilter] = useState<'All' | 'You owe' | 'You are owed'>('All');
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/notifications`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data.data || []);
+        }
+      } catch (err) {}
+    };
+    fetchNotifs();
+  }, []);
+
+  const handleAcceptInvite = async (id: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/notifications/${id}/accept`, { method: 'POST', headers: getAuthHeaders() });
+      if (res.ok) {
+        setNotifications(prev => prev.filter(n => n._id !== id));
+      }
+    } catch (err) {}
+  };
   
   const totalBalance = Number(initialData?.totalBalance) || 0;
   const youOwe = Number(initialData?.youOwe) || 0;
@@ -202,6 +226,31 @@ export default function RecentActivityView({ initialData }: RecentActivityViewPr
 
         {/* Right Col - Widgets */}
         <div className="flex flex-col gap-6">
+          {/* Notifications */}
+          {notifications.length > 0 && (
+            <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 shadow-sm">
+               <h3 className="text-xs font-bold text-white/50 tracking-widest uppercase mb-4 flex items-center gap-2">
+                 <Bell size={14} /> Notifications
+               </h3>
+               <div className="flex flex-col gap-3">
+                 {notifications.map((notif: any) => (
+                   <div key={notif._id} className="p-3 bg-white/5 rounded-xl border border-white/10 text-sm flex flex-col gap-2">
+                     <span className="text-white">
+                       {notif.type === 'GROUP_INVITE' 
+                         ? `${notif.sender?.fullName || 'Someone'} invited you to join ${notif.group?.name || 'a group'}`
+                         : `${notif.sender?.fullName || 'Someone'} joined your group ${notif.group?.name || ''}`}
+                     </span>
+                     {notif.type === 'GROUP_INVITE' && notif.status === 'PENDING' && (
+                       <button onClick={() => handleAcceptInvite(notif._id)} className="bg-[#b2f5d1] text-black px-3 py-1.5 rounded-lg text-xs font-bold w-fit cursor-pointer">
+                         Accept Invite
+                       </button>
+                     )}
+                   </div>
+                 ))}
+               </div>
+            </div>
+          )}
+
           {/* Total Balance */}
           <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 relative overflow-hidden shadow-sm">
              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />

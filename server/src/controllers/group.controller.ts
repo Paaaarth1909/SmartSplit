@@ -3,7 +3,7 @@ import { Group, generateInviteCode, ensureGroupInviteCode } from "../models/Grou
 import { User } from "../models/User.js";
 import { Expense } from "../models/Expense.js";
 import { calculateSettlements } from "../utils/debtCalculator.js";
-import { emitToGroup } from "../socket.js";
+import { emitToGroup, emitToUser } from "../socket.js";
 
 export const createGroup = async (req: Request, res: Response) => {
   try {
@@ -239,6 +239,39 @@ export const addMember = async (req: Request, res: Response) => {
       role: (role === "admin" ? "admin" : "member") as "admin" | "member",
       joinedAt: new Date()
     };
+
+    if (trimmedEmail || trimmedPhone) {
+      const existingUser = await User.findOne({
+        $or: [
+          ...(trimmedEmail ? [{ email: trimmedEmail }] : []),
+          ...(trimmedPhone ? [{ phone: trimmedPhone }] : [])
+        ]
+      });
+
+      if (existingUser) {
+        const { Notification } = await import("../models/Notification.js");
+        const existingInvite = await Notification.findOne({
+          recipient: existingUser._id,
+          group: group._id,
+          type: "GROUP_INVITE",
+          status: "PENDING"
+        });
+        
+        if (!existingInvite) {
+          const invite = await Notification.create({
+            recipient: existingUser._id,
+            sender: (req as any).user?.id || (req as any).user?._id,
+            group: group._id,
+            type: "GROUP_INVITE",
+            status: "PENDING"
+          });
+          
+          emitToUser(existingUser._id.toString(), "notification:new", invite);
+        }
+        
+        return res.status(200).json({ success: true, message: "Invite sent", data: group });
+      }
+    }
 
     group.members.push(newMember);
     await group.save();

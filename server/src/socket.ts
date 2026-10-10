@@ -91,3 +91,11 @@ export const emitToGroup = (groupId: string, event: string, payload: any) => {
     console.log(`[Socket.io] Emitted '${event}' to room '${room}'`);
   }
 };
+
+export const emitToUser = (userId: string, event: string, payload: any) => {
+  if (io) {
+    const room = `user:${userId}`;
+    io.to(room).emit(event, payload);
+    console.log(`[Socket.io] Emitted '${event}' to room '${room}'`);
+  }
+};

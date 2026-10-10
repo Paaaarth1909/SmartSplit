@@ -26,6 +26,8 @@ app.use(cors());
 
 app.use(express.json());
 
+import notificationRoutes from "./routes/notification.routes.js";
+
 app.use("/api/auth", authRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/users", userRoutes);
@@ -33,6 +35,7 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/ai", ocrRoutes);
 app.use("/api/currencies", currencyRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", message: "Server is operational" });
