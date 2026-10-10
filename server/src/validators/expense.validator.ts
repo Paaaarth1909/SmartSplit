@@ -4,7 +4,7 @@ const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format");
 
 const participantSchema = z.object({
   userId: objectId,
-  amount: z.number().positive().optional(),
+  amount: z.number().nonnegative().optional(),
   percentage: z.number().min(0).max(100).optional(),
   shares: z.number().positive().optional(),
 });
