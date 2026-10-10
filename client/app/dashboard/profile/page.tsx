@@ -138,9 +138,6 @@ export default function ProfileDashboardPage() {
               <Link href="/dashboard/settings" className="flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-lg border border-white/10 transition-colors">
                 <Bell className="w-3.5 h-3.5" /> Edit Profile
               </Link>
-              <Link href="/dashboard/expenses/new" className="px-4 py-2 bg-[#b2f5d1] hover:bg-[#9de4c2] text-black text-xs font-bold rounded-lg transition-colors shadow-[0_0_10px_rgba(178,245,209,0.3)]">
-                Settle Up
-              </Link>
             </div>
           </div>
         </div>
@@ -159,23 +156,23 @@ export default function ProfileDashboardPage() {
             </div>
           ) : (
             recentTransactions.map((tx: any) => (
-              <div key={tx.id} className="bg-[#121214] border border-white/5 rounded-xl p-3 flex items-center justify-between hover:bg-white/5 hover:border-white/10 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/5 flex items-center justify-center">
+              <div key={tx.id} className="bg-[#121214] border border-white/5 rounded-xl p-3 flex items-center justify-between hover:bg-white/5 hover:border-white/10 transition-colors gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                  <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/5 flex items-center justify-center shrink-0 aspect-square">
                     <Receipt className="w-4 h-4 text-white/70" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white/90">{tx.description}</h4>
-                    <p className="text-[10px] text-white/40 mt-0.5">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-semibold text-white/90 truncate">{tx.description}</h4>
+                    <p className="text-[10px] text-white/40 mt-0.5 truncate">
                       {new Date(tx.date).toLocaleDateString()} • {tx.payerName} paid {formatCurrency(tx.amount)}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <div className={`text-sm font-bold ${tx.isPayer ? 'text-[#b2f5d1]' : 'text-red-400/90'}`}>
                     {tx.isPayer ? '+' : '-'}{formatCurrency(tx.userShare)}
                   </div>
-                  <div className="text-[9px] text-white/40 uppercase tracking-wider mt-0.5">
+                  <div className="text-[9px] text-white/40 uppercase tracking-wider mt-0.5 truncate max-w-[100px]">
                     {tx.groupName}
                   </div>
                 </div>
@@ -228,17 +225,17 @@ export default function ProfileDashboardPage() {
               </div>
             ) : (
               sharedGroups.map((group: any) => (
-                <Link key={group.id} href={`/dashboard/groups/${group.id}`} className="flex items-center justify-between group cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                <Link key={group.id} href={`/dashboard/groups/${group.id}`} className="flex items-center justify-between group cursor-pointer gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/10 transition-colors shrink-0 aspect-square">
                       <Users className="w-4 h-4 text-[#b2f5d1]" />
                     </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-white/90 group-hover:text-[#b2f5d1] transition-colors">{group.name}</h4>
-                      <p className="text-[10px] text-white/40">{group.memberCount} members</p>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold text-white/90 group-hover:text-[#b2f5d1] transition-colors truncate">{group.name}</h4>
+                      <p className="text-[10px] text-white/40 truncate">{group.memberCount} members</p>
                     </div>
                   </div>
-                  <svg className="w-4 h-4 text-white/30 group-hover:text-[#b2f5d1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-white/30 group-hover:text-[#b2f5d1] transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </Link>

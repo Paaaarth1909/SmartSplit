@@ -12,6 +12,8 @@ import {
   requestPasswordResetOtp,
   forgotPasswordUser,
   getMe,
+  API_BASE,
+  getAuthHeaders,
 } from "../lib/api";
 
 interface AuthContextType {
@@ -25,6 +27,7 @@ interface AuthContextType {
   resetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  setTheme?: (theme?: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +59,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+      localStorage.removeItem("smartsplit_theme");
+    }
     initAuth();
   }, []);
 
@@ -97,6 +105,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(null);
     setUser(null);
     if (typeof window !== "undefined") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+      localStorage.removeItem("smartsplit_theme");
       window.location.href = "/login";
     }
   };
@@ -110,15 +121,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  useEffect(() => {
-    if (user?.preferences?.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else if (user?.preferences?.theme === 'light') {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    }
-  }, [user?.preferences?.theme]);
+  const setTheme = async () => {
+    // Pure dark theme enforced site-wide
+  };
 
   return (
     <AuthContext.Provider
@@ -133,6 +138,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resetPassword,
         logout,
         refreshUser,
+        setTheme,
       }}
     >
       {children}

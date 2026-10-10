@@ -25,11 +25,26 @@ const features = [
   }
 ];
 
+import { LampContainer } from "../ui/lamp";
+
 export default function FeaturesGrid() {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 pt-8 pb-32" id="features">
-      <div className="text-center mb-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Intelligent Ledger Architecture</h2>
+    <section className="w-full max-w-6xl mx-auto px-4 pt-0 pb-32" id="features">
+      <div className="text-center -mb-24">
+        <LampContainer>
+          <motion.h2
+            initial={{ opacity: 0.5, y: 100 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: 0.3,
+              duration: 0.8,
+              ease: "easeInOut",
+            }}
+            className="text-3xl md:text-4xl font-bold text-white tracking-tight mt-8"
+          >
+            Intelligent Ledger Architecture
+          </motion.h2>
+        </LampContainer>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

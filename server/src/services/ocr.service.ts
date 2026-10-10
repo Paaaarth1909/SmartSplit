@@ -1,4 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
+import { KeyManager } from "../utils/KeyManager.js";
+import Groq from "groq-sdk";
 
 export interface OcrItem {
   name: string;
@@ -18,7 +20,15 @@ export interface OcrResult {
   total: number;
 }
 
-const MODELS = [
+const groqKeyManager = new KeyManager("GROQ_API_KEY");
+const geminiKeyManager = new KeyManager("GEMINI_API_KEY");
+
+const GROQ_MODELS = [
+  "llama-3.2-90b-vision-preview",
+  "llama-3.2-11b-vision-preview"
+];
+
+const GEMINI_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
@@ -29,14 +39,6 @@ export const processReceiptImage = async (
   imageBuffer: Buffer,
   mimeType: string
 ): Promise<OcrResult> => {
-  // Use Gemini API Key for OCR since Groq Vision models are offline
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is not configured");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-
   const prompt = `Analyze this receipt image and extract the following details into a strict JSON object:
 - merchant (string: store/restaurant name)
 - date (string: YYYY-MM-DD or readable date string if found, otherwise today's date)
@@ -54,34 +56,104 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
   let responseText = "";
   let lastError: any = null;
 
-  for (const modelName of MODELS) {
-    try {
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents: [
-          {
-            inlineData: {
-              data: imageBuffer.toString("base64"),
-              mimeType: mimeType || "image/jpeg"
-            }
-          },
-          prompt
-        ]
-      });
-      if (response && response.text) {
-        responseText = response.text;
-        break;
+  // 1. Try Groq API keys first
+  let groqKey = groqKeyManager.getKey();
+  if (groqKey) {
+    let attempts = groqKeyManager.hasMultipleKeys() ? 4 : 1; // Try up to 4 times across rotated keys
+    
+    for (let i = 0; i < attempts; i++) {
+      if (responseText) break;
+      const groq = new Groq({ apiKey: groqKey });
+      
+      for (const modelName of GROQ_MODELS) {
+        try {
+          const response = await groq.chat.completions.create({
+            model: modelName,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: prompt },
+                  { 
+                    type: "image_url", 
+                    image_url: { url: `data:${mimeType || "image/jpeg"};base64,${imageBuffer.toString("base64")}` } 
+                  }
+                ]
+              }
+            ],
+            temperature: 0.1,
+          });
+          
+          if (response.choices[0]?.message?.content) {
+            responseText = response.choices[0].message.content;
+            break;
+          }
+        } catch (err: any) {
+          console.warn(`[OCR] Groq model ${modelName} failed with key index.`, err?.message || err);
+          lastError = err;
+          // If rate limit error (429) or unauthorized (401), rotate key and break to outer loop to retry
+          if (err?.status === 429 || err?.status === 401) {
+            groqKey = groqKeyManager.getNextKey();
+            break;
+          }
+        }
       }
-    } catch (err: any) {
-      console.warn(`[OCR] Gemini model ${modelName} failed:`, err?.message || err);
-      lastError = err;
+    }
+  }
+
+  // 2. Fallback to Gemini if Groq fails or no response
+  if (!responseText) {
+    let geminiKey = geminiKeyManager.getKey();
+    if (geminiKey) {
+      let attempts = geminiKeyManager.hasMultipleKeys() ? 4 : 1;
+      
+      for (let i = 0; i < attempts; i++) {
+        if (responseText) break;
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
+        
+        for (const modelName of GEMINI_MODELS) {
+          try {
+            const response = await ai.models.generateContent({
+              model: modelName,
+              contents: [
+                {
+                  inlineData: {
+                    data: imageBuffer.toString("base64"),
+                    mimeType: mimeType || "image/jpeg"
+                  }
+                },
+                prompt
+              ]
+            });
+            if (response && response.text) {
+              responseText = response.text;
+              break;
+            }
+          } catch (err: any) {
+            console.warn(`[OCR] Gemini model ${modelName} failed:`, err?.message || err);
+            lastError = err;
+            if (err?.status === 429 || err?.status === 401 || err?.status === 503) {
+              geminiKey = geminiKeyManager.getNextKey();
+              break;
+            }
+          }
+        }
+      }
     }
   }
 
   if (!responseText) {
-    throw new Error(
-      lastError?.message || "Failed to generate content with Gemini Vision API"
-    );
+    let errorMsg = lastError?.message || "Failed to generate content with both Groq and Gemini Vision APIs";
+    try {
+      const parsed = JSON.parse(errorMsg);
+      if (parsed?.error?.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch {}
+    if (errorMsg.includes("high demand") || errorMsg.includes("UNAVAILABLE")) {
+      errorMsg = "The AI model is currently experiencing high demand. Please try again in a moment or enter details manually.";
+    }
+    throw new Error(errorMsg);
   }
 
   const cleanedText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -120,6 +192,6 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
       total: parseNumber(parsed.total)
     };
   } catch (err) {
-    throw new Error("Failed to parse receipt JSON response from Gemini Vision");
+    throw new Error("Failed to parse receipt JSON response from Vision AI");
   }
 };

@@ -21,6 +21,7 @@ import { Group, SplitType } from './types';
 import SplitMethodSelector from './SplitMethodSelector';
 import SplitInputPanel from './SplitInputPanel';
 import { API_BASE, getAuthHeaders, getAuthToken } from '@/lib/api';
+import { formatErrorMessage } from '@/lib/errorUtils';
 
 interface Props {
   group: Group;
@@ -47,6 +48,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [aiError, setAiError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // ── Step 1 state (Details) ─────────────────────────────────────
   const [description, setDescription] = useState('');
@@ -128,21 +130,22 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
         body: formData,
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       
       if (!res.ok) {
         if (res.status === 409 && json.isDuplicate) {
           throw new Error('This receipt has already been uploaded previously.');
         }
-        throw new Error(json.error || 'Failed to process receipt');
+        throw new Error(formatErrorMessage(json.error || json.message || 'Failed to process receipt'));
       }
 
       processAIResponse(json.data);
     } catch (err: any) {
-      setAiError(err.message || 'Error processing receipt image.');
+      setAiError(formatErrorMessage(err));
     } finally {
       setIsProcessingAI(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
   };
 
@@ -160,13 +163,13 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
         body: JSON.stringify({ prompt: nlpText }),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       
-      if (!res.ok) throw new Error(json.error || 'Failed to parse natural language');
+      if (!res.ok) throw new Error(formatErrorMessage(json.error || json.message || 'Failed to parse natural language'));
 
       processAIResponse(json.data);
     } catch (err: any) {
-      setAiError(err.message || 'Error parsing text.');
+      setAiError(formatErrorMessage(err));
     } finally {
       setIsProcessingAI(false);
     }
@@ -196,12 +199,12 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
         body: JSON.stringify(payload)
       });
       
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to create expense');
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(formatErrorMessage(json.error || json.message || 'Failed to create expense'));
 
       onExpenseCreated();
     } catch (err: any) {
-      setError(err.message || 'Failed to create expense');
+      setError(formatErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }
@@ -248,8 +251,11 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
 
         {error && (
           <div className="m-6 mb-0 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3">
-            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-            <p>{error}</p>
+            <AlertTriangle size={18} className="shrink-0 mt-0.5 text-red-400" />
+            <div className="flex-1">
+              <p className="font-semibold text-red-300 text-xs uppercase tracking-wider">Error</p>
+              <p className="text-sm text-red-400 mt-0.5 leading-relaxed">{error}</p>
+            </div>
           </div>
         )}
 
@@ -259,8 +265,11 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
             <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {aiError && (
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3">
-                  <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                  <p>{aiError}</p>
+                  <AlertTriangle size={18} className="shrink-0 mt-0.5 text-red-400" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-300 text-xs uppercase tracking-wider">Notice</p>
+                    <p className="text-sm text-red-400 mt-0.5 leading-relaxed">{aiError}</p>
+                  </div>
                 </div>
               )}
               
@@ -290,8 +299,12 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                 </div>
 
                 <button 
-                  className="px-6 py-2.5 rounded-xl border border-white/10 bg-white/5 text-sm font-bold text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                  onClick={(e) => { e.stopPropagation(); /* Mobile camera trigger */ }}
+                  type="button"
+                  className="px-6 py-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-[#b2f5d1]/20 hover:border-[#b2f5d1]/40 text-sm font-bold text-white hover:text-[#b2f5d1] transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    cameraInputRef.current?.click();
+                  }}
                 >
                   <Camera size={16} /> Open Camera
                 </button>
@@ -301,6 +314,15 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                   ref={fileInputRef}
                   onChange={handleFileUpload}
                   accept="image/*"
+                  className="hidden"
+                />
+
+                <input 
+                  type="file" 
+                  ref={cameraInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  capture="environment"
                   className="hidden"
                 />
               </div>

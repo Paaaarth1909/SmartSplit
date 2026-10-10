@@ -73,9 +73,19 @@ export const parseReceipt = async (req: Request, res: Response) => {
       data: { ...result, imageHash },
     });
   } catch (error: any) {
+    let errorMsg = error.message || "Failed to process receipt image";
+    try {
+      const parsed = JSON.parse(errorMsg);
+      if (parsed?.error?.message) {
+        errorMsg = parsed.error.message;
+      }
+    } catch {}
+    if (errorMsg.includes("high demand") || errorMsg.includes("UNAVAILABLE")) {
+      errorMsg = "The AI model is currently experiencing high demand. Please try again in a moment or enter expense manually.";
+    }
     return res.status(500).json({
       success: false,
-      error: error.message || "Failed to process receipt image"
+      error: errorMsg
     });
   }
 };

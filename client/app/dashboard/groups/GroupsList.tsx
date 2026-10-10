@@ -196,13 +196,13 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
               key={group.id || group._id} 
               className="bg-[#121214] border border-white/10 rounded-xl p-4 flex items-center justify-between hover:border-white/20 transition-all"
             >
-              <Link href={`/dashboard/groups/${group.id || group._id}`} className="flex items-center gap-4 flex-1">
-                <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/70">
+              <Link href={`/dashboard/groups/${group.id || group._id}`} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-3">
+                <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/70 shrink-0 aspect-square">
                   {getCategoryIcon(group.category)}
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">{group.name}</h3>
-                  <p className="text-xs text-white/40">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm sm:text-base font-bold text-white tracking-tight truncate">{group.name}</h3>
+                  <p className="text-xs text-white/40 truncate">
                     {group.category || 'GENERAL'} • {group.memberCount || (group.members || []).length} members
                   </p>
                 </div>

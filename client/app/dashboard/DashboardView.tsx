@@ -92,21 +92,21 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
               recentBalances.map((item: any, idx: number) => {
                 const isOwed = item.type === 'owed';
                 return (
-                  <div key={idx} className="p-5 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-pointer">
-                    <div className="flex items-center gap-4">
+                  <div key={idx} className="p-4 sm:p-5 flex items-center justify-between hover:bg-white/5 transition-colors group cursor-pointer gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 pr-2">
                       {item.name === "Ski Trip 2024" || item.description === "Group" ? (
-                        <div className="w-10 h-10 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-white/50">
+                        <div className="w-10 h-10 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-white/50 shrink-0 aspect-square">
                           <Users className="w-4 h-4" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white/70">
+                        <div className="w-10 h-10 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white/70 shrink-0 aspect-square">
                           {item.name.charAt(0)}
                         </div>
                       )}
                       
-                      <div>
-                        <h4 className="text-sm font-bold text-white/90">{item.name}</h4>
-                        <p className="text-xs text-white/50">{item.description}</p>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-bold text-white/90 truncate">{item.name}</h4>
+                        <p className="text-xs text-white/50 truncate">{item.description}</p>
                       </div>
                     </div>
                     
@@ -137,12 +137,9 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
            </div>
            
            <div className="flex flex-col gap-4 relative z-10">
-             <button className="w-full bg-[#b2f5d1] hover:bg-[#9de4c2] text-black font-bold py-3.5 rounded-xl transition-colors shadow-[0_0_15px_rgba(178,245,209,0.2)] flex items-center justify-center gap-2 text-sm">
-               <Banknote className="w-4 h-4" /> Settle Up
-             </button>
              <button 
                onClick={() => setIsCreateGroupOpen(true)}
-               className="w-full bg-transparent hover:bg-white/5 border border-white/10 text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+               className="w-full bg-[#b2f5d1] hover:bg-[#9de4c2] text-black font-bold py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(178,245,209,0.2)] hover:shadow-[0_0_20px_rgba(178,245,209,0.4)] flex items-center justify-center gap-2 text-sm cursor-pointer"
              >
                <UserPlus className="w-4 h-4" /> Create Group
              </button>
