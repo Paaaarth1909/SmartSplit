@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { KeyManager } from "../utils/keyManager";
+import { KeyManager } from "../utils/keyManager.js";
 import Groq from "groq-sdk";
 
 export interface ParsedNlpExpense {
