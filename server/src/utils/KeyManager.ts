@@ -8,13 +8,13 @@ export class KeyManager {
     this.keys = keyString.split(",").map(k => k.trim()).filter(k => k.length > 0);
   }
 
-  public getKey(): string | null {
-    if (this.keys.length === 0) return null;
+  public getKey(): string | undefined {
+    if (this.keys.length === 0) return undefined;
     return this.keys[this.currentIndex];
   }
 
-  public getNextKey(): string | null {
-    if (this.keys.length === 0) return null;
+  public getNextKey(): string | undefined {
+    if (this.keys.length === 0) return undefined;
     this.currentIndex = (this.currentIndex + 1) % this.keys.length;
     console.log(`[KeyManager] Rotated to API key index ${this.currentIndex + 1}/${this.keys.length}`);
     return this.keys[this.currentIndex];
