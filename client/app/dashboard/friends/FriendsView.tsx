@@ -124,7 +124,6 @@ export default function FriendsView({ initialFriends }: FriendsViewProps) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h4 className="text-sm font-bold text-white truncate">{user.fullName}</h4>
-                    <p className="text-xs text-white/40 truncate">{user.email}</p>
                   </div>
                 </div>
                 <button 

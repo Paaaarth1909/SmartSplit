@@ -308,10 +308,11 @@ export default function GroupDetailsView({
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white/80">Member Details</h2>
             <button 
-              className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-medium text-white/60 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
               onClick={() => setIsAddMemberOpen(true)}
             >
               <Plus className="w-3 h-3" />
+              <span>Add Members</span>
             </button>
           </div>
           
@@ -358,10 +359,11 @@ export default function GroupDetailsView({
               )}
               <button 
                 onClick={() => setIsAddExpenseOpen(true)}
-                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-black hover:bg-[#b2f5d1] transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-[#b2f5d1] text-white/60 hover:text-black transition-colors cursor-pointer text-xs font-bold"
                 title="Add Expense"
               >
                 <Plus className="w-4 h-4" />
+                <span>Add Expense</span>
               </button>
             </div>
           </div>
