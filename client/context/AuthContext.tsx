@@ -27,7 +27,7 @@ interface AuthContextType {
   resetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
-  setTheme: (theme: 'dark' | 'light') => Promise<void>;
+  setTheme?: (theme?: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,6 +59,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+      localStorage.removeItem("smartsplit_theme");
+    }
     initAuth();
   }, []);
 
@@ -100,6 +105,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(null);
     setUser(null);
     if (typeof window !== "undefined") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+      localStorage.removeItem("smartsplit_theme");
       window.location.href = "/login";
     }
   };
@@ -113,53 +121,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const setTheme = async (newTheme: 'dark' | 'light') => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('smartsplit_theme', newTheme);
-        if (newTheme === 'dark') {
-          document.documentElement.classList.add('dark');
-          document.documentElement.classList.remove('light');
-        } else {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
-        }
-      }
-
-      setUser(prev => prev ? ({
-        ...prev,
-        preferences: {
-          ...(prev.preferences || {}),
-          theme: newTheme
-        }
-      }) : prev);
-
-      const token = getAuthToken();
-      if (token) {
-        await fetch(`${API_BASE}/users/me`, {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ theme: newTheme })
-        }).catch(err => console.warn('Failed to sync theme with backend:', err));
-      }
-    } catch (err) {
-      console.warn('Error setting theme:', err);
-    }
+  const setTheme = async () => {
+    // Pure dark theme enforced site-wide
   };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('smartsplit_theme');
-      const targetTheme = (savedTheme as 'dark' | 'light') || (user?.preferences?.theme as 'dark' | 'light') || 'dark';
-      if (targetTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-      }
-    }
-  }, [user?.preferences?.theme]);
 
   return (
     <AuthContext.Provider

@@ -11,7 +11,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ initialData }: SettingsViewProps) {
-  const { refreshUser, setTheme, user } = useAuth();
+  const { refreshUser, user } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: initialData?.fullName || '',
@@ -23,28 +23,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize theme from localStorage first if available, then initialData/user, fallback to dark
-  const [preferences, setPreferences] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('smartsplit_theme');
-      if (stored) return { theme: stored === 'dark' };
-    }
-    const initialTheme = initialData?.preferences?.theme || user?.preferences?.theme || 'dark';
-    return { theme: initialTheme === 'dark' };
-  });
-
-  // Keep in sync if user state updates from external source
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('smartsplit_theme');
-      if (stored) {
-        setPreferences({ theme: stored === 'dark' });
-      } else if (initialData?.preferences?.theme) {
-        setPreferences({ theme: initialData.preferences.theme === 'dark' });
-      }
-    }
-  }, [initialData?.preferences?.theme]);
-
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -52,13 +30,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleToggleTheme = () => {
-    const nextThemeState = !preferences.theme;
-    const nextThemeString = nextThemeState ? 'dark' : 'light';
-    setPreferences({ theme: nextThemeState });
-    setTheme(nextThemeString);
   };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,10 +55,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       const res = await fetch(`${API_BASE}/users/me`, {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify({
-          ...formData,
-          theme: preferences.theme ? 'dark' : 'light'
-        })
+        body: JSON.stringify(formData)
       });
       if (res.ok) {
         setSaveSuccess(true);
@@ -232,51 +200,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           >
             {isSaving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Changes'}
           </button>
-        </div>
-      </div>
-
-      {/* Ergonomics Section */}
-      <div className="bg-[#121214] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-6 sm:gap-8 shadow-xl">
-        <div>
-          <h3 className="text-base font-bold text-white tracking-tight">Display & Visual Ergonomics</h3>
-          <p className="text-xs text-white/50 mt-1">Customize your interface theme.</p>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 pr-2">
-              <h4 className="text-sm font-bold text-white mb-0.5">Dark Mode</h4>
-              <p className="text-xs text-white/40 leading-relaxed">
-                High contrast obsidian canvas optimized for late night expense tracking & battery efficiency.
-              </p>
-            </div>
-            
-            {/* Highly visible, reliable toggle switch */}
-            <button 
-              type="button"
-              role="switch"
-              aria-checked={preferences.theme}
-              aria-label="Toggle dark mode"
-              onClick={handleToggleTheme}
-              className={`w-14 h-8 rounded-full p-1 transition-all duration-300 relative cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-[#b2f5d1]/50 border border-white/10 ${
-                preferences.theme 
-                  ? 'bg-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.4)]' 
-                  : 'bg-zinc-700 hover:bg-zinc-600'
-              }`}
-            >
-              <div 
-                className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out flex items-center justify-center ${
-                  preferences.theme ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              >
-                {preferences.theme ? (
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
-                ) : (
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
-                )}
-              </div>
-            </button>
-          </div>
         </div>
       </div>
     </div>
