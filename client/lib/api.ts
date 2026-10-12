@@ -11,7 +11,6 @@ export const API_BASE =
 
 const TOKEN_KEY = "smartsplit_auth_token";
 
-// Attach JWT token to all axios outgoing requests
 if (typeof window !== "undefined") {
   axios.interceptors.request.use((config) => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -53,8 +52,6 @@ export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Recor
   return headers;
 }
 
-// ── Auth API ────────────────────────────────────────────────────────
-
 export interface AuthUser {
   id: string;
   fullName: string;
@@ -80,7 +77,6 @@ export interface AuthResponse {
   otp?: string;
 }
 
-// Safe fetch wrapper that surfaces a helpful message if Render is restarting or waking up
 async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(input, init);
@@ -94,7 +90,6 @@ async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-// Helper to safely parse API responses, preventing "Unexpected token '<' is not valid JSON"
 async function parseApiResponse<T = any>(
   res: Response,
   fallbackError: string
@@ -209,8 +204,6 @@ export async function getMe(): Promise<AuthUser> {
   return data.user;
 }
 
-// ── Expenses ───────────────────────────────────────────────────────
-
 export async function createExpense(
   payload: CreateExpensePayload
 ): Promise<Expense> {
@@ -237,8 +230,6 @@ export async function listGroupExpenses(
   const json = await res.json();
   return json.data;
 }
-
-// ── Split Preview ──────────────────────────────────────────────────
 
 export async function previewSplit(
   payload: PreviewSplitPayload

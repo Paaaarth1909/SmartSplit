@@ -112,7 +112,6 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Hash password before saving to MongoDB
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) {
     return next();
@@ -127,7 +126,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Compare password helper method
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {

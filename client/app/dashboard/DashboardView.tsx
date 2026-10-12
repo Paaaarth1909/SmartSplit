@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import CreateGroupModal from '@/components/CreateGroupModal';
 import { API_BASE } from '@/lib/api';
 import { ArrowUpRight, ArrowDownRight, Search, CreditCard, Wallet, Users, Settings, Banknote, UserPlus, PieChart } from 'lucide-react';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface DashboardViewProps {
   initialData: any;
@@ -12,10 +13,7 @@ interface DashboardViewProps {
 export default function DashboardView({ initialData }: DashboardViewProps) {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const { totalBalance, youOwe, youAreOwed, groupsOwedCount, friendsOwedCount, recentBalances } = initialData;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Math.abs(amount));
-  };
+  const { formatCurrency } = useCurrency();
 
   const formatTotalBalance = (amount: number) => {
     const formatted = formatCurrency(amount);
@@ -24,9 +22,7 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* 3 Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Balance Card */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group hover:border-[#b2f5d1]/30 transition-colors">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#b2f5d1]/10 rounded-full blur-[50px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-[#b2f5d1]/20 transition-colors" />
           <div className="flex items-center gap-2 mb-6">
@@ -44,7 +40,6 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
           </div>
         </div>
 
-        {/* You Owe Card */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group hover:border-red-400/30 transition-colors">
           <div className="flex items-center gap-2 mb-6">
             <ArrowUpRight className="w-4 h-4 text-white/50" />
@@ -58,7 +53,6 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
           </div>
         </div>
 
-        {/* You Are Owed Card */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group hover:border-[#b2f5d1]/30 transition-colors">
           <div className="flex items-center gap-2 mb-6">
             <ArrowDownRight className="w-4 h-4 text-white/50" />
@@ -73,10 +67,8 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
         </div>
       </div>
 
-      {/* Main Grid: Recent Balances & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Recent Balances (Left Column - 2/3 width) */}
         <div className="lg:col-span-2 bg-[#121214] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
           <div className="p-6 border-b border-white/5 flex items-center justify-between">
             <h3 className="text-lg font-bold text-white tracking-tight">Recent Balances</h3>
@@ -125,7 +117,6 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
           </div>
         </div>
 
-        {/* Quick Actions (Right Column - 1/3 width) */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col h-full relative overflow-hidden">
            <div className="absolute top-0 right-0 w-48 h-48 bg-[#b2f5d1]/5 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
            
@@ -146,7 +137,6 @@ export default function DashboardView({ initialData }: DashboardViewProps) {
            </div>
            
            <div className="mt-auto pt-16 flex flex-col items-center justify-center text-center relative z-10">
-             {/* The circle */}
              <div className="w-12 h-12 rounded-full bg-transparent border border-white/20 flex items-center justify-center mb-4 relative z-10 text-white/50">
                 <PieChart className="w-5 h-5" />
              </div>

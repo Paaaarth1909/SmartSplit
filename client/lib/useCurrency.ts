@@ -1,0 +1,37 @@
+'use client';
+
+import { useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import {
+  formatCurrency as rawFormatCurrency,
+  getCurrencySymbol as rawGetCurrencySymbol,
+  getCurrencyInfo,
+  setCurrencyCode,
+  type CurrencyInfo,
+} from '@/lib/currency';
+
+export function useCurrency() {
+  const { user } = useAuth();
+
+  const currencyCode = useMemo(() => {
+    const code = user?.preferences?.currency || 'INR';
+    setCurrencyCode(code);
+    return code;
+  }, [user?.preferences?.currency]);
+
+  const info: CurrencyInfo = useMemo(() => getCurrencyInfo(currencyCode), [currencyCode]);
+
+  const formatCurrency = useMemo(
+    () => (amount: number) => rawFormatCurrency(amount, currencyCode),
+    [currencyCode],
+  );
+
+  const currencySymbol = useMemo(() => rawGetCurrencySymbol(currencyCode), [currencyCode]);
+
+  return {
+    currencyCode,
+    currencySymbol,
+    info,
+    formatCurrency,
+  };
+}

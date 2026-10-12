@@ -8,6 +8,7 @@ import AddGroupMemberModal from '../../../../components/AddGroupMemberModal';
 import SettleDebtModal from '../../../../components/SettleDebtModal';
 import EditGroupModal from '../../../../components/EditGroupModal';
 import { API_BASE, getAuthHeaders } from '@/lib/api';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface GroupDetailsViewProps {
   groupData: any;
@@ -121,9 +122,7 @@ export default function GroupDetailsView({
     setChatInput('');
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   const getPercentage = (val: number, total: number) => {
     if (total === 0) return 0;
@@ -240,7 +239,6 @@ export default function GroupDetailsView({
         />
       )}
       
-      {/* LEFT COLUMN: Member Details */}
       <div className="w-full lg:w-64 flex flex-col gap-6 shrink-0 overflow-y-auto pr-2 custom-scrollbar">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -340,7 +338,6 @@ export default function GroupDetailsView({
         </div>
       </div>
 
-      {/* CENTER COLUMN: Owe and Pay */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#121214] border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#b2f5d1]/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         
@@ -417,7 +414,6 @@ export default function GroupDetailsView({
                   const owes = balance.netAmount < 0;
                   const isSettled = Math.abs(balance.netAmount) < 0.01;
                   
-                  // Find settlements related to this user
                   const userSettlements = settlements.filter((s: any) => s.from === balance.userId || s.to === balance.userId);
 
                   return (
@@ -493,7 +489,6 @@ export default function GroupDetailsView({
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Live Chat (Full-screen overlay on mobile, right-column sidebar on desktop) */}
       {isChatOpen ? (
         <div className="fixed inset-0 z-50 lg:relative lg:inset-auto lg:z-auto w-full lg:w-[320px] flex flex-col shrink-0 bg-[#0a0a0a] lg:bg-[#0f0f0f] border-none lg:border-l lg:border-white/10 h-full overflow-hidden animate-in fade-in duration-200">
           <div className="p-4 sm:p-5 border-b border-white/5 bg-[#0a0a0a] flex justify-between items-center shrink-0">
@@ -581,7 +576,6 @@ export default function GroupDetailsView({
         </button>
       )}
 
-      {/* Delete Group Modal */}
       {isDeleteModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"

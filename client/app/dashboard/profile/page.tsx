@@ -82,12 +82,9 @@ export default function ProfileDashboardPage() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
-      {/* Main Column */}
       <div className="flex-1 flex flex-col gap-5">
         
-        {/* Profile / Balance Card */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between shadow-xl min-h-[240px]">
-          {/* Subtle background glow effect */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#b2f5d1]/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
           
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8">
@@ -106,7 +103,6 @@ export default function ProfileDashboardPage() {
                   {userInitial}
                 </div>
               )}
-              {/* Online indicator dot */}
               <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-[#b2f5d1] rounded-full border-2 border-[#121214] shadow-[0_0_10px_rgba(178,245,209,0.5)]" />
             </div>
 
@@ -142,7 +138,6 @@ export default function ProfileDashboardPage() {
           </div>
         </div>
 
-        {/* Recent Transactions List */}
         <div className="flex flex-col gap-2">
           {isLoadingData ? (
             <div className="bg-[#121214] border border-white/5 rounded-xl p-8 flex items-center justify-center">
@@ -183,10 +178,8 @@ export default function ProfileDashboardPage() {
 
       </div>
 
-      {/* Side Column (Widgets) */}
       <div className="w-full lg:w-72 flex flex-col gap-5 shrink-0">
         
-        {/* Month to Date Widget */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-5 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#b2f5d1]/30 to-transparent" />
           <h3 className="font-bold text-base text-white mb-5 tracking-tight">Month to Date</h3>
@@ -209,7 +202,6 @@ export default function ProfileDashboardPage() {
           </div>
         </div>
 
-        {/* Shared Groups Widget */}
         <div className="bg-[#121214] border border-white/10 rounded-2xl p-5">
           <h3 className="font-bold text-base text-white mb-5 tracking-tight">Shared Groups</h3>
           

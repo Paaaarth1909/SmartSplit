@@ -54,7 +54,6 @@ const GroupSchema = new Schema<IGroup>({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Automatically ensure unique invite code on save
 GroupSchema.pre("save", async function () {
   if (!this.inviteCode || this.inviteCode.trim() === "") {
     let unique = false;

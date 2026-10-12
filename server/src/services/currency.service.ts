@@ -62,7 +62,6 @@ export const fetchLiveExchangeRates = async (baseCurrency: string = "USD"): Prom
     console.warn(`Failed to fetch live FX rates for ${base}, using fallback matrix`);
   }
 
-  // Fallback calculations relative to USD
   const baseUsdRate = FALLBACK_RATES_TO_USD[base] || 1.0;
   const derivedRates: Record<string, number> = {};
   for (const [code, usdRate] of Object.entries(FALLBACK_RATES_TO_USD)) {

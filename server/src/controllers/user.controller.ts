@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { User } from "../models/User.js";
 import { Group, ensureGroupInviteCode } from "../models/Group.js";
 import { Expense } from "../models/Expense.js";
+import { Notification } from "../models/Notification.js";
+import { FriendRequest } from "../models/FriendRequest.js";
+import { emitToUser } from "../socket.js";
 
 export const createUser = async (req: Request, res: Response) => {
   try {
@@ -130,14 +133,11 @@ export const updateSecuritySettings = async (req: Request, res: Response) => {
   }
 };
 
-// Unified helper to calculate net debt, credit, and balances for a user
 async function calculateUserFinancials(userId: string, userEmail: string, userPhone: string) {
-  // 1. Purge any orphan expenses belonging to deleted groups
   const allActiveGroups = await Group.find({}).select("_id").lean();
   const allActiveGroupIds = allActiveGroups.map(g => g._id);
   await Expense.deleteMany({ group: { $nin: allActiveGroupIds } });
 
-  // 2. Query groups current user belongs to
   const cleanEmail = (userEmail || "").toLowerCase().trim();
   const cleanPhone = (userPhone || "").trim();
 
@@ -151,7 +151,6 @@ async function calculateUserFinancials(userId: string, userEmail: string, userPh
 
   const groupIds = userGroups.map(g => g._id);
 
-  // 3. User alias set (handles member subdocument IDs belonging to current user)
   const myIdSet = new Set<string>([userId]);
   for (const group of userGroups) {
     for (const m of group.members) {
@@ -163,7 +162,6 @@ async function calculateUserFinancials(userId: string, userEmail: string, userPh
     }
   }
 
-  // 4. Name and ID mapping for all members
   const memberNameMap = new Map<string, string>();
   const memberGroupMap = new Map<string, string>();
   const memberIdToUserId = new Map<string, string>();
@@ -187,14 +185,12 @@ async function calculateUserFinancials(userId: string, userEmail: string, userPh
     }
   }
 
-  // 5. Fetch all expenses for active user groups only
   const allExpenses = await Expense.find({ group: { $in: groupIds } })
     .populate('paidBy', 'fullName email avatar')
     .populate('splits.user', 'fullName email avatar')
     .populate('group', 'name')
     .sort({ date: -1 });
 
-  // 6. Net balances per person
   const personNetMap = new Map<string, {
     canonicalId: string;
     name: string;
@@ -251,7 +247,6 @@ async function calculateUserFinancials(userId: string, userEmail: string, userPh
     }
   }
 
-  // 7. Aggregate net totals
   let totalOwe = 0;
   let totalOwed = 0;
   const groupsOwedSet = new Set<string>();
@@ -282,7 +277,6 @@ async function calculateUserFinancials(userId: string, userEmail: string, userPh
     }
   }
 
-  // 8. Month to date
   let monthShared = 0;
   let monthPaid = 0;
   const now = new Date();
@@ -677,8 +671,6 @@ export const updateCurrentUser = async (req: Request, res: Response) => {
   }
 };
 
-// --- Friend Management ---
-
 export const searchUsers = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
@@ -688,7 +680,7 @@ export const searchUsers = async (req: Request, res: Response) => {
       return res.json({ success: true, data: [] });
     }
 
-    const currentUser = await User.findOne({ 
+    const currentUser = await User.findOne({
       $or: [
         { _id: userId },
         { email: (req as any).user.email }
@@ -699,23 +691,66 @@ export const searchUsers = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Current user not found" });
     }
 
-    const friendIds = currentUser.friends || [];
-    const includeFriends = req.query.includeFriends === 'true';
+    const friendIdStrings = new Set((currentUser.friends || []).map((f: any) => f.toString()));
 
-    // Search for users whose email or name matches the query
     const filter: any = {
-      _id: includeFriends ? { $ne: currentUser._id } : { $ne: currentUser._id, $nin: friendIds },
+      _id: { $ne: currentUser._id },
       $or: [
-        { fullName: { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } }
+        { fullName: { $regex: query.trim(), $options: 'i' } },
+        { preferredName: { $regex: query.trim(), $options: 'i' } },
+        { email: { $regex: query.trim(), $options: 'i' } }
       ]
     };
 
-    const users = await User.find(filter)
-      .select('fullName email avatar _id')
-      .limit(10);
+    const rawUsers = await User.find(filter)
+      .select('fullName preferredName avatar _id')
+      .limit(20);
 
-    return res.json({ success: true, data: users });
+    const pendingRequests = await FriendRequest.find({
+      $or: [
+        { sender: currentUser._id, status: 'PENDING' },
+        { recipient: currentUser._id, status: 'PENDING' }
+      ]
+    });
+
+    const sentRequestRecipientIds = new Set<string>();
+    const receivedRequestMap = new Map<string, string>(); // senderId -> requestId
+
+    pendingRequests.forEach(r => {
+      const sId = r.sender.toString();
+      const recId = r.recipient.toString();
+      if (sId === currentUser._id.toString()) {
+        sentRequestRecipientIds.add(recId);
+      } else if (recId === currentUser._id.toString()) {
+        receivedRequestMap.set(sId, r._id.toString());
+      }
+    });
+
+    const results = rawUsers.map(u => {
+      const uId = u._id.toString();
+      let relationshipStatus: 'FRIENDS' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'NONE' = 'NONE';
+      let requestId: string | undefined = undefined;
+
+      if (friendIdStrings.has(uId)) {
+        relationshipStatus = 'FRIENDS';
+      } else if (sentRequestRecipientIds.has(uId)) {
+        relationshipStatus = 'REQUEST_SENT';
+      } else if (receivedRequestMap.has(uId)) {
+        relationshipStatus = 'REQUEST_RECEIVED';
+        requestId = receivedRequestMap.get(uId);
+      }
+
+      return {
+        _id: u._id,
+        fullName: u.fullName || u.preferredName || "User",
+        preferredName: u.preferredName,
+        avatar: u.avatar || "",
+        relationshipStatus,
+        requestId
+      };
+    });
+
+    return res.json({ success: true, data: results });
   } catch (error) {
     console.error("Search users error:", error);
     return res.status(500).json({ error: "Failed to search users" });
@@ -732,7 +767,7 @@ export const getFriends = async (req: Request, res: Response) => {
         { _id: userId },
         { email: userEmail }
       ]
-    }).populate('friends', 'fullName email avatar _id');
+    }).populate('friends', 'fullName preferredName avatar _id');
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -745,43 +780,338 @@ export const getFriends = async (req: Request, res: Response) => {
   }
 };
 
-export const addFriend = async (req: Request, res: Response) => {
+export const getFriendRequests = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const userEmail = (req as any).user.email;
-    const { friendId } = req.params;
 
     const currentUser = await User.findOne({
-      $or: [
-        { _id: userId },
-        { email: userEmail }
-      ]
+      $or: [{ _id: userId }, { email: userEmail }]
+    });
+
+    if (!currentUser) return res.status(404).json({ error: "User not found" });
+
+    const incoming = await FriendRequest.find({
+      recipient: currentUser._id,
+      status: "PENDING"
+    })
+      .sort({ createdAt: -1 })
+      .populate("sender", "fullName preferredName avatar _id");
+
+    const outgoing = await FriendRequest.find({
+      sender: currentUser._id,
+      status: "PENDING"
+    })
+      .sort({ createdAt: -1 })
+      .populate("recipient", "fullName preferredName avatar _id");
+
+    return res.json({
+      success: true,
+      data: {
+        incoming,
+        outgoing
+      }
+    });
+  } catch (error) {
+    console.error("Get friend requests error:", error);
+    return res.status(500).json({ error: "Failed to fetch friend requests" });
+  }
+};
+
+export const sendFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+    const targetUserId = req.params.targetUserId as string;
+
+    const currentUser = await User.findOne({
+      $or: [{ _id: userId }, { email: userEmail }]
     });
 
     if (!currentUser) return res.status(404).json({ error: "Current user not found" });
 
-    const targetUser = await User.findById(friendId);
+    if (currentUser._id.toString() === targetUserId) {
+      return res.status(400).json({ error: "You cannot send a friend request to yourself" });
+    }
+
+    const targetUser = await User.findById(targetUserId);
     if (!targetUser) return res.status(404).json({ error: "Target user not found" });
 
-    // Ensure friends arrays exist
-    if (!currentUser.friends) currentUser.friends = [];
-    if (!targetUser.friends) targetUser.friends = [];
-
-    // Mutually add
-    if (!currentUser.friends.includes(targetUser._id as any)) {
-      currentUser.friends.push(targetUser._id as any);
-      await currentUser.save();
-    }
-    
-    if (!targetUser.friends.includes(currentUser._id as any)) {
-      targetUser.friends.push(currentUser._id as any);
-      await targetUser.save();
+    const isAlreadyFriend = (currentUser.friends || []).some(
+      (f: any) => f.toString() === targetUser._id.toString()
+    );
+    if (isAlreadyFriend) {
+      return res.status(400).json({ error: "You are already friends with this user" });
     }
 
-    return res.json({ success: true, message: "Friend added successfully" });
+    const incomingRequest = await FriendRequest.findOne({
+      sender: targetUser._id,
+      recipient: currentUser._id,
+      status: "PENDING"
+    });
+
+    if (incomingRequest) {
+      incomingRequest.status = "ACCEPTED";
+      await incomingRequest.save();
+
+      await User.findByIdAndUpdate(currentUser._id, {
+        $addToSet: { friends: targetUser._id }
+      });
+      await User.findByIdAndUpdate(targetUser._id, {
+        $addToSet: { friends: currentUser._id }
+      });
+
+      const acceptedNotif = await Notification.create({
+        recipient: targetUser._id,
+        sender: currentUser._id,
+        type: "FRIEND_ACCEPTED",
+        status: "COMPLETED",
+        read: false
+      });
+
+      const popNotif = await Notification.findById(acceptedNotif._id)
+        .populate("sender", "fullName preferredName avatar");
+
+      emitToUser(targetUser._id.toString(), "notification:new", popNotif || acceptedNotif);
+      emitToUser(targetUser._id.toString(), "friend:status-change", {
+        userId: currentUser._id.toString(),
+        status: "FRIENDS"
+      });
+      emitToUser(currentUser._id.toString(), "friend:status-change", {
+        userId: targetUser._id.toString(),
+        status: "FRIENDS"
+      });
+
+      return res.json({
+        success: true,
+        message: "You accepted their existing friend request!",
+        status: "FRIENDS"
+      });
+    }
+
+    let existingRequest = await FriendRequest.findOne({
+      sender: currentUser._id,
+      recipient: targetUser._id
+    });
+
+    if (existingRequest && existingRequest.status === "PENDING") {
+      return res.status(400).json({ error: "Friend request already sent" });
+    }
+
+    if (existingRequest) {
+      existingRequest.status = "PENDING";
+      await existingRequest.save();
+    } else {
+      existingRequest = await FriendRequest.create({
+        sender: currentUser._id,
+        recipient: targetUser._id,
+        status: "PENDING"
+      });
+    }
+
+    const notification = await Notification.create({
+      recipient: targetUser._id,
+      sender: currentUser._id,
+      type: "FRIEND_REQUEST",
+      status: "PENDING",
+      read: false
+    });
+
+    const populatedNotif = await Notification.findById(notification._id)
+      .populate("sender", "fullName preferredName avatar");
+
+    emitToUser(targetUser._id.toString(), "notification:new", populatedNotif || notification);
+    emitToUser(targetUser._id.toString(), "friend:status-change", {
+      userId: currentUser._id.toString(),
+      status: "REQUEST_RECEIVED",
+      requestId: existingRequest._id.toString()
+    });
+    emitToUser(currentUser._id.toString(), "friend:status-change", {
+      userId: targetUser._id.toString(),
+      status: "REQUEST_SENT",
+      requestId: existingRequest._id.toString()
+    });
+
+    return res.json({
+      success: true,
+      message: "Friend request sent successfully",
+      status: "REQUEST_SENT",
+      requestId: existingRequest._id
+    });
   } catch (error) {
-    console.error("Add friend error:", error);
-    return res.status(500).json({ error: "Failed to add friend" });
+    console.error("Send friend request error:", error);
+    return res.status(500).json({ error: "Failed to send friend request" });
+  }
+};
+
+export const cancelFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+    const targetUserId = req.params.targetUserId as string;
+
+    const currentUser = await User.findOne({
+      $or: [{ _id: userId }, { email: userEmail }]
+    });
+
+    if (!currentUser) return res.status(404).json({ error: "Current user not found" });
+
+    await FriendRequest.findOneAndDelete({
+      $or: [
+        { sender: currentUser._id, recipient: targetUserId, status: "PENDING" },
+        { _id: targetUserId, sender: currentUser._id, status: "PENDING" }
+      ]
+    });
+
+    await Notification.findOneAndDelete({
+      recipient: targetUserId,
+      sender: currentUser._id,
+      type: "FRIEND_REQUEST",
+      status: "PENDING"
+    });
+
+    emitToUser(targetUserId, "friend:status-change", {
+      userId: currentUser._id.toString(),
+      status: "NONE"
+    });
+    emitToUser(currentUser._id.toString(), "friend:status-change", {
+      userId: targetUserId,
+      status: "NONE"
+    });
+
+    return res.json({
+      success: true,
+      message: "Friend request cancelled",
+      status: "NONE"
+    });
+  } catch (error) {
+    console.error("Cancel friend request error:", error);
+    return res.status(500).json({ error: "Failed to cancel friend request" });
+  }
+};
+
+export const acceptFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+    const targetUserId = req.params.targetUserId as string; // Can be targetUserId or requestId
+
+    const currentUser = await User.findOne({
+      $or: [{ _id: userId }, { email: userEmail }]
+    });
+
+    if (!currentUser) return res.status(404).json({ error: "Current user not found" });
+
+    const request = await FriendRequest.findOne({
+      $or: [
+        { sender: targetUserId, recipient: currentUser._id, status: "PENDING" },
+        { _id: targetUserId, recipient: currentUser._id, status: "PENDING" }
+      ]
+    });
+
+    if (!request) {
+      return res.status(404).json({ error: "Friend request not found or already handled" });
+    }
+
+    const senderId = request.sender.toString();
+
+    request.status = "ACCEPTED";
+    await request.save();
+
+    await User.findByIdAndUpdate(currentUser._id, {
+      $addToSet: { friends: request.sender }
+    });
+    await User.findByIdAndUpdate(request.sender, {
+      $addToSet: { friends: currentUser._id }
+    });
+
+    await Notification.findOneAndUpdate(
+      { recipient: currentUser._id, sender: request.sender, type: "FRIEND_REQUEST" },
+      { status: "ACCEPTED", read: true }
+    );
+
+    const acceptedNotif = await Notification.create({
+      recipient: request.sender,
+      sender: currentUser._id,
+      type: "FRIEND_ACCEPTED",
+      status: "COMPLETED",
+      read: false
+    });
+
+    const populatedNotif = await Notification.findById(acceptedNotif._id)
+      .populate("sender", "fullName preferredName avatar");
+
+    emitToUser(senderId, "notification:new", populatedNotif || acceptedNotif);
+    emitToUser(senderId, "friend:status-change", {
+      userId: currentUser._id.toString(),
+      status: "FRIENDS"
+    });
+    emitToUser(currentUser._id.toString(), "friend:status-change", {
+      userId: senderId,
+      status: "FRIENDS"
+    });
+
+    return res.json({
+      success: true,
+      message: "Friend request accepted",
+      status: "FRIENDS"
+    });
+  } catch (error) {
+    console.error("Accept friend request error:", error);
+    return res.status(500).json({ error: "Failed to accept friend request" });
+  }
+};
+
+export const rejectFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const userEmail = (req as any).user.email;
+    const targetUserId = req.params.targetUserId as string;
+
+    const currentUser = await User.findOne({
+      $or: [{ _id: userId }, { email: userEmail }]
+    });
+
+    if (!currentUser) return res.status(404).json({ error: "Current user not found" });
+
+    const request = await FriendRequest.findOneAndUpdate(
+      {
+        $or: [
+          { sender: targetUserId, recipient: currentUser._id, status: "PENDING" },
+          { _id: targetUserId, recipient: currentUser._id, status: "PENDING" }
+        ]
+      },
+      { status: "REJECTED" }
+    );
+
+    await Notification.findOneAndUpdate(
+      {
+        recipient: currentUser._id,
+        $or: [{ sender: targetUserId }, { _id: targetUserId }],
+        type: "FRIEND_REQUEST"
+      },
+      { status: "REJECTED", read: true }
+    );
+
+    const senderId: string = request ? request.sender.toString() : targetUserId;
+
+    emitToUser(senderId, "friend:status-change", {
+      userId: currentUser._id.toString(),
+      status: "NONE"
+    });
+    emitToUser(currentUser._id.toString(), "friend:status-change", {
+      userId: senderId,
+      status: "NONE"
+    });
+
+    return res.json({
+      success: true,
+      message: "Friend request declined",
+      status: "NONE"
+    });
+  } catch (error) {
+    console.error("Reject friend request error:", error);
+    return res.status(500).json({ error: "Failed to reject friend request" });
   }
 };
 
@@ -789,7 +1119,7 @@ export const removeFriend = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const userEmail = (req as any).user.email;
-    const { friendId } = req.params;
+    const friendId = req.params.friendId as string;
 
     const currentUser = await User.findOne({
       $or: [
@@ -801,23 +1131,40 @@ export const removeFriend = async (req: Request, res: Response) => {
     if (!currentUser) return res.status(404).json({ error: "Current user not found" });
 
     const targetUser = await User.findById(friendId);
-    
-    // Ensure friends arrays exist
-    if (!currentUser.friends) currentUser.friends = [];
-    if (targetUser && !targetUser.friends) targetUser.friends = [];
 
-    // Mutually remove
-    currentUser.friends = currentUser.friends.filter(id => id.toString() !== friendId);
+    currentUser.friends = (currentUser.friends || []).filter(
+      id => id.toString() !== friendId
+    );
     await currentUser.save();
 
     if (targetUser) {
-      targetUser.friends = (targetUser.friends || []).filter(id => id.toString() !== currentUser._id.toString());
+      targetUser.friends = (targetUser.friends || []).filter(
+        id => id.toString() !== currentUser._id.toString()
+      );
       await targetUser.save();
     }
 
-    return res.json({ success: true, message: "Friend removed successfully" });
+    await FriendRequest.deleteMany({
+      $or: [
+        { sender: currentUser._id, recipient: friendId },
+        { sender: friendId, recipient: currentUser._id }
+      ]
+    });
+
+    emitToUser(friendId, "friend:status-change", {
+      userId: currentUser._id.toString(),
+      status: "NONE"
+    });
+    emitToUser(currentUser._id.toString(), "friend:status-change", {
+      userId: friendId,
+      status: "NONE"
+    });
+
+    return res.json({ success: true, message: "Friend removed successfully", status: "NONE" });
   } catch (error) {
     console.error("Remove friend error:", error);
     return res.status(500).json({ error: "Failed to remove friend" });
   }
 };
+
+export const addFriend = sendFriendRequest;

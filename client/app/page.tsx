@@ -8,7 +8,6 @@ import Footer from '@/components/landing/Footer';
 export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans overflow-x-hidden selection:bg-white/20 relative">
-      {/* Background pattern moved to HeroSection */}
 
       <Navbar />
       
@@ -23,4 +22,3 @@ export default function Home() {
     </div>
   );
 }
-

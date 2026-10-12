@@ -56,7 +56,6 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
   let responseText = "";
   let lastError: any = null;
 
-  // 1. Try Groq API keys first
   let groqKey = groqKeyManager.getKey();
   if (groqKey) {
     let attempts = groqKeyManager.hasMultipleKeys() ? 4 : 1; // Try up to 4 times across rotated keys
@@ -91,7 +90,6 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
         } catch (err: any) {
           console.warn(`[OCR] Groq model ${modelName} failed with key index.`, err?.message || err);
           lastError = err;
-          // If rate limit error (429) or unauthorized (401), rotate key and break to outer loop to retry
           if (err?.status === 429 || err?.status === 401) {
             groqKey = groqKeyManager.getNextKey();
             break;
@@ -101,7 +99,6 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
     }
   }
 
-  // 2. Fallback to Gemini if Groq fails or no response
   if (!responseText) {
     let geminiKey = geminiKeyManager.getKey();
     if (geminiKey) {

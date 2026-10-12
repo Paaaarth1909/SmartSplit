@@ -1,8 +1,4 @@
-/**
- * Safely parses and formats any error into a clean, human-readable message.
- * Strips raw JSON (like Google GenAI {"error":{"code":503,"message":"..."}}),
- * stack traces, code breaks, and returns friendly, actionable feedback.
- */
+
 export function formatErrorMessage(error: any): string {
   if (!error) return 'An unexpected error occurred. Please try again.';
 
@@ -34,7 +30,6 @@ export function formatErrorMessage(error: any): string {
     }
   }
 
-  // Attempt to parse if string is JSON (e.g. {"error":{"code":503,"message":"..."}})
   const trimmed = (raw || '').trim();
   if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
     try {
@@ -49,13 +44,11 @@ export function formatErrorMessage(error: any): string {
         raw = parsed.message;
       }
     } catch {
-      // Not JSON, continue with raw
     }
   }
 
   const lower = (raw || '').toLowerCase();
 
-  // Handle specific common AI and network scenarios with friendly human messages
   if (
     lower.includes('high demand') || 
     lower.includes('unavailable') || 
@@ -95,13 +88,11 @@ export function formatErrorMessage(error: any): string {
     return 'Please select a valid receipt image (JPG, PNG, or WebP).';
   }
 
-  // Remove code stack trace and raw code syntax if present
   if (raw.includes('\n')) {
     raw = raw.split('\n')[0];
   }
   raw = raw.replace(/^Error:\s*/i, '').trim();
 
-  // If after cleaning it's still looking like a JSON or code snippet
   if (raw.startsWith('{') || raw.startsWith('[')) {
     return 'Service encountered an issue processing your request. Please try again.';
   }

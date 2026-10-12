@@ -60,7 +60,6 @@ Return pure JSON only. Do not add markdown codeblock formatting if possible.`;
   let responseText = "";
   let lastError: any = null;
 
-  // 1. Try Groq API keys first
   let groqKey = groqKeyManager.getKey();
   if (groqKey) {
     let attempts = groqKeyManager.hasMultipleKeys() ? 4 : 1;
@@ -96,7 +95,6 @@ Return pure JSON only. Do not add markdown codeblock formatting if possible.`;
     }
   }
 
-  // 2. Fallback to Gemini if Groq fails or no response
   if (!responseText) {
     let geminiKey = geminiKeyManager.getKey();
     if (geminiKey) {

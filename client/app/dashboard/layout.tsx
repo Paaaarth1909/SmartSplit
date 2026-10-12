@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Clock, Users, UserPlus, Settings, LogOut, Plus, Bell, HelpCircle, Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import GlobalNotificationPopup from "@/components/GlobalNotificationPopup";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -36,7 +37,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
+      <GlobalNotificationPopup />
+
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 z-40 md:hidden"
@@ -44,12 +46,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`fixed md:relative z-50 w-56 h-full border-r border-white/10 bg-[#0f0f0f] flex flex-col justify-between shrink-0 transition-transform duration-300 ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       }`}>
         <div>
-          {/* Logo / Header */}
           <div className="p-4 border-b border-white/5">
             <Link href="/" className="flex items-center justify-between px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all cursor-pointer group shadow-sm">
               <div className="flex flex-col gap-0.5">
@@ -106,9 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative bg-[#0a0a0a]">
-        {/* Top Navbar */}
         <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-white/5 shrink-0 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-md z-20">
           <div className="flex items-center gap-4 md:gap-6">
             <button 

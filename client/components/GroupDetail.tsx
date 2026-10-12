@@ -100,7 +100,6 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 items-start">
         
-        {/* Members List */}
         <div className="glass-panel" style={{ padding: '1.5rem' }}>
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Users size={20} color="var(--accent-primary)" /> Members
@@ -138,7 +137,6 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
           )}
         </div>
 
-        {/* Add Member Form */}
         <div className="glass-panel" style={{ padding: '1.5rem' }}>
           <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <UserPlus size={20} color="var(--accent-primary)" /> Add Member
@@ -206,7 +204,6 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
           onClose={() => setShowExpenseModal(false)}
           onExpenseCreated={() => {
             setShowExpenseModal(false);
-            // Optionally refresh expenses here
           }}
         />
       )}

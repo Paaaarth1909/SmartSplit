@@ -37,10 +37,8 @@ const receiptHashSchema = new Schema<IReceiptHash>(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
-// Fast lookup for image-hash duplicate checks scoped to a group
 receiptHashSchema.index({ group: 1, imageHash: 1 });
 
-// Metadata fingerprint lookups: (group, merchant, total, date)
 receiptHashSchema.index({ group: 1, merchant: 1, total: 1, receiptDate: 1 });
 
 export const ReceiptHash = model<IReceiptHash>("ReceiptHash", receiptHashSchema);

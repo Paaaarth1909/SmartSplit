@@ -35,7 +35,6 @@ export async function sendOtpEmail(toEmail: string, otp: string): Promise<SendEm
     </div>
   `;
 
-  // ── 1. Resend API (HTTP Port 443 - Instant & Never Blocked by Render) ─────
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
   if (resendApiKey) {
     try {
@@ -69,7 +68,6 @@ export async function sendOtpEmail(toEmail: string, otp: string): Promise<SendEm
     }
   }
 
-  // ── 2. Brevo / Sendinblue API (HTTP Port 443 - Also Never Blocked) ────────
   const brevoApiKey = (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY)?.trim();
   if (brevoApiKey) {
     try {
@@ -96,7 +94,6 @@ export async function sendOtpEmail(toEmail: string, otp: string): Promise<SendEm
     }
   }
 
-  // ── 3. SMTP (Gmail Nodemailer - Fails with timeout on Render Free tier) ─────
   const smtpUser = (
     process.env.SMTP_USER ||
     process.env.EMAIL_USER ||
@@ -127,7 +124,6 @@ export async function sendOtpEmail(toEmail: string, otp: string): Promise<SendEm
     const nodemailerModule = await import("nodemailer");
     const nodemailer = (nodemailerModule as any).default || nodemailerModule;
 
-    // Use tight timeouts (4s) so it doesn't hang if Render drops outbound SMTP traffic
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,

@@ -102,7 +102,6 @@ export const login = async (req: Request, res: Response) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Query user and explicitly include password field
     const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
     if (!user) {
@@ -335,11 +334,9 @@ export const exportUsers = async (_req: Request, res: Response) => {
       updatedAt: u.updatedAt,
     }));
 
-    // Write file to workspace root: c:/SmartSplit/existing_users.json
     const exportPath = path.resolve(process.cwd(), "..", "existing_users.json");
     fs.writeFileSync(exportPath, JSON.stringify(formatted, null, 2), "utf-8");
 
-    // Also write a markdown summary file: c:/SmartSplit/existing_users.md
     const mdPath = path.resolve(process.cwd(), "..", "existing_users.md");
     let md = "# Existing SmartSplit Users in MongoDB\n\n";
     md += `*Exported on: ${new Date().toISOString()}*\n\n`;
@@ -366,4 +363,3 @@ export const exportUsers = async (_req: Request, res: Response) => {
     });
   }
 };
-

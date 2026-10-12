@@ -32,16 +32,12 @@ export const parseReceipt = async (req: Request, res: Response) => {
       });
     }
 
-    // ------------------------------------------------------------------
-    // Duplicate detection — Layer 1 (image hash)
-    // ------------------------------------------------------------------
     const groupId = req.body?.groupId || req.query?.groupId;
     let imageHash: string | undefined;
 
     try {
       imageHash = await computeImageHash(imageBuffer);
     } catch (hashErr) {
-      // Non-fatal: if hashing fails we still proceed with OCR
       console.warn("Receipt image hashing failed, skipping duplicate check:", hashErr);
     }
 
@@ -63,9 +59,6 @@ export const parseReceipt = async (req: Request, res: Response) => {
       }
     }
 
-    // ------------------------------------------------------------------
-    // OCR processing (existing logic)
-    // ------------------------------------------------------------------
     const result = await processReceiptImage(imageBuffer, mimeType);
 
     return res.status(200).json({

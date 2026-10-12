@@ -57,7 +57,6 @@ export default function FeaturesGrid() {
             transition={{ duration: 0.6, delay: idx * 0.2 }}
             className="group relative flex flex-col p-8 bg-[#18181b] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 transition-colors"
           >
-            {/* Subtle top-right glow */}
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors" />
 
             <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-6">

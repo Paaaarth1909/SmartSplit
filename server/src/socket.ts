@@ -24,6 +24,22 @@ export const initSocket = (httpServer: HttpServer): Server => {
 
     socket.join("global");
 
+    socket.on("join-user", (userId: string) => {
+      if (userId) {
+        const room = `user:${userId}`;
+        socket.join(room);
+        console.log(`[Socket.io] Socket ${socket.id} joined room: ${room}`);
+      }
+    });
+
+    socket.on("leave-user", (userId: string) => {
+      if (userId) {
+        const room = `user:${userId}`;
+        socket.leave(room);
+        console.log(`[Socket.io] Socket ${socket.id} left room: ${room}`);
+      }
+    });
+
     socket.on("join-group", (groupId: string) => {
       if (groupId) {
         const room = `group:${groupId}`;
@@ -92,9 +108,10 @@ export const emitToGroup = (groupId: string, event: string, payload: any) => {
   }
 };
 
-export const emitToUser = (userId: string, event: string, payload: any) => {
-  if (io) {
-    const room = `user:${userId}`;
+export const emitToUser = (userId: string | any, event: string, payload: any) => {
+  if (io && userId) {
+    const idStr = Array.isArray(userId) ? userId[0] : String(userId);
+    const room = `user:${idStr}`;
     io.to(room).emit(event, payload);
     console.log(`[Socket.io] Emitted '${event}' to room '${room}'`);
   }

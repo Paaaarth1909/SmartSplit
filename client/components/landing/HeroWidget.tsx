@@ -13,7 +13,6 @@ export default function HeroWidget() {
         transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
         className="flex flex-col md:flex-row w-full h-auto md:h-[400px] bg-[#121214] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
       >
-        {/* Left Pane: Smart Input */}
         <div className="w-full md:w-1/2 p-6 flex flex-col border-b md:border-b-0 md:border-r border-white/5 relative">
           <div className="flex justify-between items-center mb-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -45,7 +44,6 @@ export default function HeroWidget() {
           </div>
         </div>
 
-        {/* Right Pane: Live Optimization */}
         <div className="w-full md:w-1/2 p-6 flex flex-col relative overflow-hidden bg-[#0d0d0f]">
           <div className="flex justify-between items-center z-10 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -58,9 +56,7 @@ export default function HeroWidget() {
           </div>
 
           <div className="flex-1 relative flex items-center justify-center min-h-[250px]">
-            {/* Simple representation of the debt graph from the design */}
             <div className="relative w-full max-w-[300px] h-[150px]">
-              {/* Nodes */}
               <motion.div 
                 animate={{ y: [0, -5, 0] }}
                 transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
@@ -85,7 +81,6 @@ export default function HeroWidget() {
                 Alex
               </motion.div>
 
-              {/* Edge/Connection Line with animated dot */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
                 <path 
                   id="debt-line"
@@ -94,7 +89,6 @@ export default function HeroWidget() {
                   stroke="rgba(255,255,255,0.1)" 
                   strokeWidth="2" 
                 />
-                {/* Transfer badge */}
                 <foreignObject x="60" y="55" width="80" height="24">
                   <div className="bg-white/10 border border-white/20 rounded-full px-2 py-1 text-[10px] text-white flex items-center justify-center backdrop-blur-md">
                     + $42.00

@@ -82,7 +82,6 @@ export const getGroupAnalytics = async (groupId: string): Promise<GroupAnalytics
       };
     }
 
-    // Category calculation
     const cat = expense.category || "General";
     if (!categoryMap[cat]) {
       categoryMap[cat] = { amount: 0, count: 0 };
@@ -90,7 +89,6 @@ export const getGroupAnalytics = async (groupId: string): Promise<GroupAnalytics
     categoryMap[cat].amount += amt;
     categoryMap[cat].count += 1;
 
-    // Monthly timeline
     const dateObj = new Date(expense.date);
     const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
     if (!monthlyMap[monthKey]) {
@@ -99,13 +97,11 @@ export const getGroupAnalytics = async (groupId: string): Promise<GroupAnalytics
     monthlyMap[monthKey].amount += amt;
     monthlyMap[monthKey].count += 1;
 
-    // Member paid calculation
     const paidById = expense.paidBy._id?.toString() || (expense.paidBy as any).toString();
     if (memberMap[paidById]) {
       memberMap[paidById].totalPaid += amt;
     }
 
-    // Member share calculation
     expense.splits.forEach((split) => {
       const splitUserId = split.user.toString();
       if (memberMap[splitUserId]) {
@@ -203,7 +199,6 @@ export const getUserAnalytics = async (userId: string): Promise<UserAnalyticsRes
     }
   });
 
-  // Calculate balances from Balance collection
   const userBalances = await Balance.find({ user: userObjectId });
 
   let totalUserOwes = 0;

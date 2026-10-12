@@ -8,7 +8,6 @@ export default function Footer() {
   return (
     <footer className="relative w-full overflow-hidden border-t border-white/10 bg-[#0a0a0a] pt-16 pb-8 mt-20">
 
-      {/* Huge Faint Background Text */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
         <span className="text-[15vw] font-black text-white/[0.02] tracking-tighter leading-none">
           SMARTSPLIT
@@ -17,7 +16,6 @@ export default function Footer() {
 
       <div className="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col items-start justify-between min-h-[250px]">
 
-        {/* Left Content */}
         <AnimatedContainer className="flex flex-col gap-6 max-w-sm">
           <div className="flex items-center gap-2">
             <Frame className="w-6 h-6 text-white" />
@@ -40,7 +38,6 @@ export default function Footer() {
           </div>
         </AnimatedContainer>
 
-        {/* Bottom Bar */}
         <div className="w-full mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-white/40 text-xs">
           <p>© {new Date().getFullYear()} SmartSplit INC. All rights reserved.</p>
         </div>

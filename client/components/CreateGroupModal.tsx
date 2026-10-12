@@ -162,7 +162,7 @@ const CreateGroupModal: React.FC<Props> = ({ onClose, onGroupCreated, apiUrl }) 
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm text-white font-medium truncate">{friend.fullName}</span>
-                          <span className="text-[10px] text-white/40 truncate">{friend.email}</span>
+                          <span className="text-[10px] text-white/40 truncate">Network Friend</span>
                         </div>
                       </div>
                     );

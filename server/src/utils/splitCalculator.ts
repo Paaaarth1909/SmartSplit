@@ -1,14 +1,8 @@
-/**
- * Pure split-calculation logic. No DB access here — this makes it trivially
- * unit-testable and reusable for both the "real" create-expense flow and a
- * stateless "preview" endpoint the frontend can call live as the user types.
- */
 
 export type SplitType = "equal" | "exact" | "percentage" | "shares";
 
 export interface SplitParticipantInput {
   userId: string;
-  // Only one of these is used, depending on splitType:
   amount?: number; // for "exact"
   percentage?: number; // for "percentage"
   shares?: number; // for "shares" (weighted, e.g. 2 shares vs 1 share)
@@ -21,12 +15,6 @@ export interface ComputedSplit {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/**
- * Distributes `totalAmount` across participants per splitType and returns
- * exact per-user amounts that always sum to totalAmount (to the cent).
- * Any rounding remainder (from division) is assigned to the LAST participant
- * so totals reconcile exactly — never lose or invent a paisa/cent.
- */
 export function calculateSplit(
   totalAmount: number,
   splitType: SplitType,
@@ -62,8 +50,6 @@ function distributeWithRemainder(
   const remainder = round2(totalAmount - sum);
 
   if (remainder !== 0) {
-    // Push whatever's left (a few cents either way) onto the last participant
-    // so the split always sums exactly to totalAmount.
     rounded[rounded.length - 1].amount = round2(
       rounded[rounded.length - 1].amount + remainder
     );

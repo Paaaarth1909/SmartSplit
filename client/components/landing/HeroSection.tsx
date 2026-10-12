@@ -17,7 +17,6 @@ export default function HeroSection() {
           "fill-[#27ff9a]/40"
         )}
       />
-      {/* Background radial glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
       <motion.h1 

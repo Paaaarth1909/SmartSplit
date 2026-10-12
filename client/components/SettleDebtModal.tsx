@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ArrowRight, DollarSign, AlertCircle, Loader2, CreditCard } from 'lucide-react';
 import { settleDebt } from '@/lib/api';
+import { useCurrency } from '@/lib/useCurrency';
 
 interface SettleDebtModalProps {
   isOpen: boolean;
@@ -37,8 +38,8 @@ export default function SettleDebtModal({
   const [notes, setNotes] = useState('UPI / Direct Payment');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const { currencySymbol, formatCurrency: fmtCurrency } = useCurrency();
 
-  // Initialise or update form when modal opens or prefill changes
   useEffect(() => {
     if (!isOpen) return;
     setError('');
@@ -48,13 +49,11 @@ export default function SettleDebtModal({
       setReceiverId(prefill.receiverId);
       setAmount(prefill.amount ? prefill.amount.toString() : '');
     } else if (settlements.length > 0) {
-      // Pick first pending settlement
       const first = settlements[0];
       setPayerId(first.from);
       setReceiverId(first.to);
       setAmount(first.amount.toString());
     } else if (balances.length > 1) {
-      // Pick debtor and creditor if available
       const debtor = balances.find(b => b.netAmount < -0.01);
       const creditor = balances.find(b => b.netAmount > 0.01);
       if (debtor) setPayerId(debtor.userId);
@@ -126,7 +125,6 @@ export default function SettleDebtModal({
         className="w-full max-w-lg bg-[#121214] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#b2f5d1]/10 border border-[#b2f5d1]/20 flex items-center justify-center text-[#b2f5d1]">
@@ -145,7 +143,6 @@ export default function SettleDebtModal({
           </button>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
           {error && (
             <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-start gap-2.5">
@@ -154,7 +151,6 @@ export default function SettleDebtModal({
             </div>
           )}
 
-          {/* Quick Settlement Recommendations */}
           {settlements.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
@@ -180,7 +176,7 @@ export default function SettleDebtModal({
                         <span className="font-semibold text-white">{s.toName}</span>
                       </div>
                       <span className="font-mono font-bold text-sm text-[#b2f5d1]">
-                        ₹{s.amount.toFixed(2)}
+                        {fmtCurrency(s.amount)}
                       </span>
                     </button>
                   );
@@ -189,7 +185,6 @@ export default function SettleDebtModal({
             </div>
           )}
 
-          {/* Payer and Receiver Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
@@ -203,7 +198,7 @@ export default function SettleDebtModal({
                 <option value="">Select payer...</option>
                 {balances.map((b) => (
                   <option key={b.userId} value={b.userId}>
-                    {b.name} {b.netAmount < -0.01 ? `(Owes ₹${Math.abs(b.netAmount).toFixed(2)})` : ''}
+                    {b.name} {b.netAmount < -0.01 ? `(Owes ${fmtCurrency(Math.abs(b.netAmount))})` : ''}
                   </option>
                 ))}
               </select>
@@ -221,20 +216,19 @@ export default function SettleDebtModal({
                 <option value="">Select receiver...</option>
                 {balances.map((b) => (
                   <option key={b.userId} value={b.userId}>
-                    {b.name} {b.netAmount > 0.01 ? `(Owed ₹${b.netAmount.toFixed(2)})` : ''}
+                    {b.name} {b.netAmount > 0.01 ? `(Owed ${fmtCurrency(b.netAmount)})` : ''}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Amount */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
               Amount Paid
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 font-medium">₹</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 font-medium">{currencySymbol}</span>
               <input
                 type="number"
                 step="0.01"
@@ -247,7 +241,6 @@ export default function SettleDebtModal({
             </div>
           </div>
 
-          {/* Payment Method / Notes */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
               Payment Method / Note
@@ -261,19 +254,17 @@ export default function SettleDebtModal({
             />
           </div>
 
-          {/* Impact preview card */}
           {payerId && receiverId && amount && parseFloat(amount) > 0 && (
             <div className="p-4 rounded-xl bg-[#1a1a1c] border border-[#b2f5d1]/20 flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#b2f5d1]/10 flex items-center justify-center text-[#b2f5d1] shrink-0">
                 <CreditCard className="w-4 h-4" />
               </div>
               <p className="text-xs text-white/70 leading-relaxed">
-                Recording this payment will credit <strong className="text-white">{payerName}</strong> by <strong className="text-[#b2f5d1]">₹{parseFloat(amount).toFixed(2)}</strong> and clear corresponding debt owed to <strong className="text-white">{receiverName}</strong>.
+                Recording this payment will credit <strong className="text-white">{payerName}</strong> by <strong className="text-[#b2f5d1]">{fmtCurrency(parseFloat(amount))}</strong> and clear corresponding debt owed to <strong className="text-white">{receiverName}</strong>.
               </p>
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/5">
             <button
               type="button"

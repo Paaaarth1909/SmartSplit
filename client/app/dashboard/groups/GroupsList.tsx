@@ -5,6 +5,7 @@ import { Home, Plane, Utensils, LayoutGrid, List, Plus, Settings, Link as LinkIc
 import CreateGroupModal from '@/components/CreateGroupModal';
 import JoinGroupModal from '@/components/JoinGroupModal';
 import { API_BASE, getAuthHeaders } from '@/lib/api';
+import { useCurrency } from '@/lib/useCurrency';
 
 import Link from 'next/link';
 
@@ -18,7 +19,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  // Keep groups in sync if initialGroups updates
   React.useEffect(() => {
     setGroups(initialGroups);
   }, [initialGroups]);
@@ -38,9 +38,7 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
     return 'text-white/60';
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   const handleDeleteClick = (e: React.MouseEvent, group: any) => {
     e.preventDefault();
@@ -78,7 +76,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
 
   return (
     <div>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8">
         <div>
           <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Active Groups</h1>
@@ -87,7 +84,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
           </p>
         </div>
         
-        {/* Toggle buttons */}
         <div className="flex items-center gap-2 mt-4 sm:mt-0">
           <button 
             onClick={() => setViewMode('list')}
@@ -104,7 +100,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
         </div>
       </div>
 
-      {/* Grid or List View */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map(group => (
@@ -149,7 +144,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
                     </p>
                   </div>
                   
-                  {/* Member Avatars */}
                   <div className="flex -space-x-2">
                     {(group.members || []).slice(0, 3).map((member: any, i: number) => (
                       <div key={i} className="w-8 h-8 rounded-full bg-[#1a1a1c] border-2 border-[#121214] flex items-center justify-center text-xs text-white/50 font-bold shadow-sm">
@@ -167,7 +161,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
             </div>
           ))}
 
-          {/* Create New Group Card */}
           <button 
             onClick={() => setIsModalOpen(true)}
             className="border-2 border-dashed border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px] hover:border-white/20 hover:bg-white/5 transition-all group cursor-pointer"
@@ -178,7 +171,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
             <p className="text-sm font-semibold text-white/60 group-hover:text-white transition-colors">Create New Group</p>
           </button>
 
-          {/* Join Group Card */}
           <button 
             onClick={() => setIsJoinModalOpen(true)}
             className="border-2 border-dashed border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px] hover:border-[#b2f5d1]/40 hover:bg-[#b2f5d1]/5 transition-all group cursor-pointer"
@@ -248,7 +240,6 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
         </div>
       )}
 
-      {/* Confirmation Modal for Group Deletion */}
       {groupToDelete && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"

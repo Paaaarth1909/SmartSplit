@@ -22,7 +22,8 @@ export const addMemberSchema = z.object({
     id: objectId,
   }),
   body: z.object({
-    name: z.string().trim().min(1, "Member name is required"),
+    name: z.string().trim().optional(),
+    friendId: objectId.optional(),
     email: z.string().email().optional().or(z.literal("")),
     phone: z.string().optional().or(z.literal("")),
     role: z.enum(["admin", "member"]).optional(),

@@ -78,10 +78,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         <p className="text-white/50 text-xs sm:text-sm">Manage your personal credentials, digital ledger behaviors, and interface theme.</p>
       </div>
 
-      {/* Main Settings Card */}
       <div className="bg-[#121214] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-6 sm:gap-8 shadow-xl">
         
-        {/* Profile Info Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-white/5 pb-6 sm:pb-8">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#1a2e22] border border-[#b2f5d1]/20 flex items-center justify-center text-lg sm:text-xl font-black text-[#b2f5d1] relative shadow-[0_0_20px_rgba(178,245,209,0.1)] shrink-0 aspect-square overflow-hidden">
@@ -133,7 +131,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           </div>
         </div>
 
-        {/* Form Fields - 1 column on mobile, 2 columns on tablet/desktop */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-8 sm:gap-y-6">
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-white/60">Full Name</label>
@@ -189,7 +186,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           </div>
         </div>
 
-        {/* Action Footer */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-2 border-t border-white/5 pt-6">
           <p className="text-[11px] text-white/40 font-medium">Changes will reflect instantly across all shared group ledgers.</p>
           <button 

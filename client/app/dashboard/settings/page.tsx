@@ -48,7 +48,6 @@ export default function SettingsPage() {
     );
   }
 
-  // Ensure default preferences exist if not populated
   if (userData && !userData.preferences) {
     userData.preferences = {
       currency: "INR",

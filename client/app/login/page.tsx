@@ -41,7 +41,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4 selection:bg-[#27ff9a]/30 overflow-hidden">
-      {/* Background DotPattern */}
       <DotPattern
         className={cn(
           "[mask-image:radial-gradient(600px_circle_at_center,white,transparent)]",
@@ -49,7 +48,6 @@ export default function LoginPage() {
         )}
       />
 
-      {/* Ambient background glow */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[400px] bg-[#27ff9a]/[0.05] rounded-full blur-[140px] pointer-events-none" />
 
       <motion.div
@@ -58,7 +56,6 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md bg-[#121214]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl"
       >
-        {/* Brand */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-3 group">
             <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-[#27ff9a]/40 transition-colors">
@@ -74,7 +71,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Error Alert */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}

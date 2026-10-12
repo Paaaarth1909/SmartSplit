@@ -122,7 +122,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const setTheme = async () => {
-    // Pure dark theme enforced site-wide
   };
 
   return (

@@ -4,7 +4,6 @@ export class KeyManager {
 
   constructor(envKeyName: string) {
     const keyString = process.env[envKeyName] || "";
-    // Allow comma separated keys
     this.keys = keyString.split(",").map(k => k.trim()).filter(k => k.length > 0);
   }
 

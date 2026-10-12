@@ -130,7 +130,6 @@ function LiquidButton({
   )
 }
 
-
 function GlassFilter() {
   return (
     <svg className="hidden">
@@ -143,7 +142,6 @@ function GlassFilter() {
           height="100%"
           colorInterpolationFilters="sRGB"
         >
-          {/* Generate turbulent noise for distortion */}
           <feTurbulence
             type="fractalNoise"
             baseFrequency="0.05 0.05"
@@ -152,10 +150,8 @@ function GlassFilter() {
             result="turbulence"
           />
 
-          {/* Blur the turbulence pattern slightly */}
           <feGaussianBlur in="turbulence" stdDeviation="2" result="blurredNoise" />
 
-          {/* Displace the source graphic with the noise */}
           <feDisplacementMap
             in="SourceGraphic"
             in2="blurredNoise"
@@ -165,10 +161,8 @@ function GlassFilter() {
             result="displaced"
           />
 
-          {/* Apply overall blur on the final result */}
           <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur" />
 
-          {/* Output the result */}
           <feComposite in="finalBlur" in2="finalBlur" operator="over" />
         </filter>
       </defs>

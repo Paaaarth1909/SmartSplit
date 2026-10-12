@@ -16,7 +16,6 @@ export function calculateSettlements(balances: NetBalance[]): Settlement[] {
   const debtors = balances.filter(b => b.netAmount < -0.01).map(b => ({ ...b }));
   const creditors = balances.filter(b => b.netAmount > 0.01).map(b => ({ ...b }));
   
-  // Sort by largest amounts first to minimize transactions
   debtors.sort((a, b) => a.netAmount - b.netAmount); // most negative first
   creditors.sort((a, b) => b.netAmount - a.netAmount); // most positive first
 
