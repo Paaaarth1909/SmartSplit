@@ -9,7 +9,7 @@ const features = [
     icon: <Scan className="w-5 h-5 text-white" />,
     title: "Gemini Vision OCR",
     description: "Itemized digital receipt parsing. Drop a blurry photo, and our vault extracts line items, taxes, and tips with optical precision.",
-    tag: "Accuracy: 99.8%"
+    tag: "Multi-Model Vision AI"
   },
   {
     icon: <Text className="w-5 h-5 text-white" />,

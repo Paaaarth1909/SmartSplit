@@ -21,13 +21,13 @@ export default function CalculatingLoader({ isOpen, groupName = "Avenue Trip", o
         if (prev >= 100) {
           clearInterval(interval);
           if (onComplete) {
-            setTimeout(onComplete, 500); // 500ms delay at 100%
+            setTimeout(onComplete, 200);
           }
           return 100;
         }
-        return Math.min(100, prev + Math.floor(Math.random() * 4) + 1);
+        return Math.min(100, prev + 15 + Math.floor(Math.random() * 10));
       });
-    }, 60);
+    }, 40);
 
     return () => clearInterval(interval);
   }, [isOpen, onComplete]);
@@ -144,16 +144,16 @@ export default function CalculatingLoader({ isOpen, groupName = "Avenue Trip", o
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mb-10 z-10">
           {renderBlock(1, "Smart Input & OCR", "Receipt items tagged")}
-          {renderBlock(2, "Debt Graph Solver", "8 settlements reduced")}
+          {renderBlock(2, "Debt Graph Solver", "Optimal paths resolved")}
           {renderBlock(3, "Ledger Sync", "Updating members")}
         </div>
 
         <div className="flex items-center gap-4 z-10">
-          <button className="flex items-center gap-2 text-xs font-medium text-white/50 hover:text-white transition-colors">
-            <Pause className="w-3.5 h-3.5" /> Pause sync
-          </button>
-          <div className="w-1 h-1 rounded-full bg-white/20"></div>
-          <button className="flex items-center gap-2 text-xs font-medium text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors">
+          <button 
+            type="button"
+            onClick={onComplete}
+            className="flex items-center gap-2 text-xs font-medium text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors cursor-pointer"
+          >
             Enter {groupName} Dashboard <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

@@ -6,10 +6,13 @@ import CreateGroupModal from '@/components/CreateGroupModal';
 import JoinGroupModal from '@/components/JoinGroupModal';
 import { API_BASE, getAuthHeaders } from '@/lib/api';
 import { useCurrency } from '@/lib/useCurrency';
+import { useAuth } from '@/context/AuthContext';
 
 import Link from 'next/link';
 
 export default function GroupsList({ initialGroups }: { initialGroups: any[] }) {
+  const { user } = useAuth();
+  const currentUserId = user?.id || (user as any)?._id;
   const [groups, setGroups] = useState<any[]>(initialGroups);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
@@ -39,6 +42,18 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
   };
 
   const { formatCurrency } = useCurrency();
+
+  const isGroupAdmin = (g: any) => {
+    if (!currentUserId) return false;
+    const creatorId = g.createdBy?._id || g.createdBy;
+    if (creatorId && (creatorId === currentUserId || creatorId.toString() === currentUserId.toString())) return true;
+    return (g.members || []).some(
+      (m: any) =>
+        ((m.userId && (m.userId === currentUserId || m.userId?._id === currentUserId || m.userId.toString() === currentUserId.toString())) ||
+          (m._id && (m._id === currentUserId || m._id.toString() === currentUserId.toString()))) &&
+        m.role === 'admin'
+    );
+  };
 
   const handleDeleteClick = (e: React.MouseEvent, group: any) => {
     e.preventDefault();
@@ -119,13 +134,15 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
                           #{group.inviteCode}
                         </span>
                       )}
-                      <button
-                        onClick={(e) => handleDeleteClick(e, group)}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/10 hover:border-red-500/30 transition-all cursor-pointer"
-                        title="Delete Group"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isGroupAdmin(group) && (
+                        <button
+                          onClick={(e) => handleDeleteClick(e, group)}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/10 hover:border-red-500/30 transition-all cursor-pointer"
+                          title="Delete Group"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <h2 className="text-xl font-bold text-white tracking-tight mb-1">{group.name}</h2>
@@ -212,13 +229,15 @@ export default function GroupsList({ initialGroups }: { initialGroups: any[] }) 
                     #{group.inviteCode}
                   </span>
                 )}
-                <button
-                  onClick={(e) => handleDeleteClick(e, group)}
-                  className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/10 hover:border-red-500/30 transition-all cursor-pointer"
-                  title="Delete Group"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {isGroupAdmin(group) && (
+                  <button
+                    onClick={(e) => handleDeleteClick(e, group)}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 border border-white/10 hover:border-red-500/30 transition-all cursor-pointer"
+                    title="Delete Group"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

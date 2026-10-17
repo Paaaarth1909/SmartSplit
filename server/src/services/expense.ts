@@ -44,6 +44,9 @@ const assertGroupMembership = async (groupId: string, userIds: string[]) => {
   if (!group) throw new AppError("Group not found", 404);
 
   const memberIds = new Set<string>();
+  if (group.createdBy) {
+    memberIds.add(group.createdBy.toString());
+  }
   for (const m of group.members) {
     if (m._id) memberIds.add(m._id.toString());
   }
@@ -54,11 +57,11 @@ const assertGroupMembership = async (groupId: string, userIds: string[]) => {
     matchedUsers.forEach((u) => memberIds.add(u._id.toString()));
   }
 
-  const invalid = userIds.filter((id) => !memberIds.has(id));
+  const invalid = userIds.filter((id) => !memberIds.has(id.toString()));
   if (invalid.length > 0) {
     throw new AppError(
-      "All participants and the payer must be members of the group",
-      400,
+      "Access denied: All participants, payer, and the expense creator must be members of the group",
+      403,
       { invalidUserIds: invalid }
     );
   }
@@ -86,6 +89,7 @@ export const createExpense = async (input: CreateExpenseInput): Promise<IExpense
   } = input;
 
   const group = await assertGroupMembership(groupId, [
+    createdBy,
     paidBy,
     ...participants.map((p) => p.userId),
   ]);
@@ -351,5 +355,12 @@ export const previewSplit = (
   splitType: SplitType,
   participants: SplitParticipantInput[]
 ) => {
-  return calculateSplit(amount, splitType, participants);
+  if (amount <= 0 || !participants || participants.length === 0) {
+    return [];
+  }
+  try {
+    return calculateSplit(amount, splitType, participants);
+  } catch (_err) {
+    return [];
+  }
 };

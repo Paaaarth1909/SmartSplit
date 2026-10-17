@@ -85,6 +85,23 @@ const SplitInputPanel: React.FC<Props> = ({
     if (totalAmount <= 0 || participants.length === 0) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
+    // If exact or percentage split is incomplete, avoid spamming preview requests
+    if (splitType === 'exact') {
+      const sum = participants.reduce((s, p) => s + (p.amount || 0), 0);
+      if (Math.abs(sum - totalAmount) > 0.02) {
+        setPreview([]);
+        setPreviewError('');
+        return;
+      }
+    } else if (splitType === 'percentage') {
+      const sumPct = participants.reduce((s, p) => s + (p.percentage || 0), 0);
+      if (Math.abs(sumPct - 100) > 0.1) {
+        setPreview([]);
+        setPreviewError('');
+        return;
+      }
+    }
+
     debounceRef.current = setTimeout(async () => {
       try {
         const payload = participants.map((p) => {
@@ -107,7 +124,7 @@ const SplitInputPanel: React.FC<Props> = ({
         setPreview(result);
         setPreviewError('');
       } catch (err: any) {
-        setPreviewError(err.message || 'Preview failed');
+        setPreviewError('');
         setPreview([]);
       }
     }, 300);

@@ -29,11 +29,19 @@ const GROQ_MODELS = [
 ];
 
 const GEMINI_MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-latest"
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
 ];
+
+const withTimeout = <T>(promise: Promise<T>, ms: number, label = "operation"): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms in ${label}`)), ms)
+    )
+  ]);
+};
 
 export const processReceiptImage = async (
   imageBuffer: Buffer,
@@ -66,22 +74,26 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
       
       for (const modelName of GROQ_MODELS) {
         try {
-          const response = await groq.chat.completions.create({
-            model: modelName,
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: prompt },
-                  { 
-                    type: "image_url", 
-                    image_url: { url: `data:${mimeType || "image/jpeg"};base64,${imageBuffer.toString("base64")}` } 
-                  }
-                ]
-              }
-            ],
-            temperature: 0.1,
-          });
+          const response = await withTimeout(
+            groq.chat.completions.create({
+              model: modelName,
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: prompt },
+                    { 
+                      type: "image_url", 
+                      image_url: { url: `data:${mimeType || "image/jpeg"};base64,${imageBuffer.toString("base64")}` } 
+                    }
+                  ]
+                }
+              ],
+              temperature: 0.1,
+            }),
+            12000,
+            `Groq ${modelName}`
+          );
           
           if (response.choices[0]?.message?.content) {
             responseText = response.choices[0].message.content;
@@ -110,18 +122,22 @@ Do not wrap response in markdown codeblock markers if possible, return pure JSON
         
         for (const modelName of GEMINI_MODELS) {
           try {
-            const response = await ai.models.generateContent({
-              model: modelName,
-              contents: [
-                {
-                  inlineData: {
-                    data: imageBuffer.toString("base64"),
-                    mimeType: mimeType || "image/jpeg"
-                  }
-                },
-                prompt
-              ]
-            });
+            const response = await withTimeout(
+              ai.models.generateContent({
+                model: modelName,
+                contents: [
+                  {
+                    inlineData: {
+                      data: imageBuffer.toString("base64"),
+                      mimeType: mimeType || "image/jpeg"
+                    }
+                  },
+                  prompt
+                ]
+              }),
+              12000,
+              `Gemini ${modelName}`
+            );
             if (response && response.text) {
               responseText = response.text;
               break;

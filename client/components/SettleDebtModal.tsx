@@ -75,6 +75,13 @@ export default function SettleDebtModal({
   const payerName = getMemberName(payerId);
   const receiverName = getMemberName(receiverId);
 
+  const directSettlement = settlements.find((s: any) => s.from === payerId && s.to === receiverId);
+  const debtorBal = balances.find((b: any) => b.userId === payerId)?.netAmount;
+  const maxDebt = directSettlement ? directSettlement.amount : (debtorBal && debtorBal < 0 ? Math.abs(debtorBal) : null);
+  const parsedAmt = parseFloat(amount) || 0;
+  const isSamePerson = Boolean(payerId && receiverId && payerId === receiverId);
+  const isOverpayment = Boolean(maxDebt !== null && parsedAmt > maxDebt + 0.05);
+
   const handleSelectQuickSettlement = (s: any) => {
     setPayerId(s.from);
     setReceiverId(s.to);
@@ -99,6 +106,14 @@ export default function SettleDebtModal({
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       setError('Please enter a valid positive settlement amount.');
+      return;
+    }
+
+    const directSettlement = settlements.find((s: any) => s.from === payerId && s.to === receiverId);
+    const debtorBal = balances.find((b: any) => b.userId === payerId)?.netAmount;
+    const maxDebt = directSettlement ? directSettlement.amount : (debtorBal && debtorBal < 0 ? Math.abs(debtorBal) : null);
+    if (maxDebt !== null && numAmount > maxDebt + 0.05) {
+      setError(`Cannot record overpayment. Maximum outstanding debt between selected members is ${fmtCurrency(maxDebt)}.`);
       return;
     }
 
@@ -254,7 +269,15 @@ export default function SettleDebtModal({
             />
           </div>
 
-          {payerId && receiverId && amount && parseFloat(amount) > 0 && (
+          {isSamePerson && (
+            <p className="text-xs text-red-400">Payer and receiver cannot be the same member.</p>
+          )}
+
+          {isOverpayment && (
+            <p className="text-xs text-red-400">Cannot record overpayment. Outstanding debt is {fmtCurrency(maxDebt!)}.</p>
+          )}
+
+          {payerId && receiverId && !isSamePerson && !isOverpayment && amount && parseFloat(amount) > 0 && (
             <div className="p-4 rounded-xl bg-[#1a1a1c] border border-[#b2f5d1]/20 flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#b2f5d1]/10 flex items-center justify-center text-[#b2f5d1] shrink-0">
                 <CreditCard className="w-4 h-4" />
@@ -275,7 +298,7 @@ export default function SettleDebtModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !payerId || !receiverId || !amount || parseFloat(amount) <= 0}
+              disabled={isSubmitting || !payerId || !receiverId || isSamePerson || isOverpayment || !amount || parseFloat(amount) <= 0}
               className="px-5 py-2.5 rounded-xl bg-[#b2f5d1] hover:bg-[#a0f0c4] active:scale-95 text-[#121214] font-bold text-xs flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(178,245,209,0.25)] disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
             >
               {isSubmitting ? (

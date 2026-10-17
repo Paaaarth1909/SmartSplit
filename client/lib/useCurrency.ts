@@ -7,10 +7,11 @@ import {
   getCurrencySymbol as rawGetCurrencySymbol,
   getCurrencyInfo,
   setCurrencyCode,
+  convertCurrency,
   type CurrencyInfo,
 } from '@/lib/currency';
 
-export function useCurrency() {
+export function useCurrency(groupCurrency?: string) {
   const { user } = useAuth();
 
   const currencyCode = useMemo(() => {
@@ -22,8 +23,9 @@ export function useCurrency() {
   const info: CurrencyInfo = useMemo(() => getCurrencyInfo(currencyCode), [currencyCode]);
 
   const formatCurrency = useMemo(
-    () => (amount: number) => rawFormatCurrency(amount, currencyCode),
-    [currencyCode],
+    () => (amount: number, sourceCurrency?: string) =>
+      rawFormatCurrency(amount, currencyCode, sourceCurrency || groupCurrency || 'INR'),
+    [currencyCode, groupCurrency],
   );
 
   const currencySymbol = useMemo(() => rawGetCurrencySymbol(currencyCode), [currencyCode]);
@@ -33,5 +35,6 @@ export function useCurrency() {
     currencySymbol,
     info,
     formatCurrency,
+    convertCurrency,
   };
 }

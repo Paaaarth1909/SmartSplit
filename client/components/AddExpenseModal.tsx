@@ -49,6 +49,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
   const [nlpText, setNlpText] = useState('');
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [aiError, setAiError] = useState('');
+  const activeAbortController = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -74,7 +75,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
   const [imageHash, setImageHash] = useState<string | undefined>();
   const [merchant, setMerchant] = useState('');
 
-  const [splitType, setSplitType] = useState<SplitType>('exact');
+  const [splitType, setSplitType] = useState<SplitType>('equal');
   const [participants, setParticipants] = useState<
     { userId: string; amount?: number; percentage?: number; shares?: number }[]
   >([]);
@@ -103,8 +104,9 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
   })();
 
   const processAIResponse = (data: any) => {
+    if (!data) return;
     const aiAmount = data.amount || data.total;
-    if (aiAmount) setAmount(aiAmount);
+    if (aiAmount) setAmount(Number(aiAmount));
 
     const aiDescription = data.description || data.title || data.merchantName || data.merchant;
     if (aiDescription) setDescription(aiDescription);
@@ -112,6 +114,72 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
     if (data.category) setCategory(data.category);
     if (data.date) setDate(data.date);
     if (data.imageHash) setImageHash(data.imageHash);
+
+    // Payer resolution
+    const rawPayer = data.paidBy || data.payer;
+    if (rawPayer && typeof rawPayer === 'string') {
+      const lower = rawPayer.trim().toLowerCase();
+      if (['you', 'me', 'myself', 'i'].includes(lower)) {
+        if (currentUserMember) {
+          setPaidBy(currentUserMember._id);
+        }
+      } else {
+        const matched = group.members.find(
+          (m) =>
+            m._id === rawPayer ||
+            (m.fullName && m.fullName.toLowerCase().includes(lower)) ||
+            (m.name && m.name.toLowerCase().includes(lower)) ||
+            (m.email && m.email.toLowerCase().includes(lower))
+        );
+        if (matched) {
+          setPaidBy(matched._id);
+        }
+      }
+    }
+
+    // Split type resolution
+    const resolvedSplitType: SplitType =
+      data.splitType && ['equal', 'exact', 'percentage', 'shares'].includes(data.splitType)
+        ? data.splitType
+        : 'equal';
+    setSplitType(resolvedSplitType);
+
+    // Participants resolution
+    if (Array.isArray(data.participants) && data.participants.length > 0) {
+      const matchedUserIds: string[] = [];
+      data.participants.forEach((pName: any) => {
+        if (!pName || typeof pName !== 'string') return;
+        const pLower = pName.trim().toLowerCase();
+        if (['you', 'me', 'myself', 'i'].includes(pLower)) {
+          if (currentUserMember && !matchedUserIds.includes(currentUserMember._id)) {
+            matchedUserIds.push(currentUserMember._id);
+          }
+        } else {
+          const match = group.members.find(
+            (m) =>
+              m._id === pName ||
+              (m.fullName && m.fullName.toLowerCase().includes(pLower)) ||
+              (m.name && m.name.toLowerCase().includes(pLower)) ||
+              (m.email && m.email.toLowerCase().includes(pLower))
+          );
+          if (match && !matchedUserIds.includes(match._id)) {
+            matchedUserIds.push(match._id);
+          }
+        }
+      });
+
+      if (matchedUserIds.length > 0) {
+        const perPerson = aiAmount ? Number(aiAmount) / matchedUserIds.length : 0;
+        setParticipants(
+          matchedUserIds.map((id) => ({
+            userId: id,
+            amount: perPerson,
+            percentage: 100 / matchedUserIds.length,
+            shares: 1,
+          }))
+        );
+      }
+    }
     
     setStep(1);
   };
@@ -119,6 +187,12 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
   const processFileUpload = useCallback(async (file: File) => {
     setIsProcessingAI(true);
     setAiError('');
+
+    const controller = new AbortController();
+    activeAbortController.current = controller;
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
 
     try {
       const token = getAuthToken();
@@ -135,6 +209,7 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
         method: 'POST',
         headers,
         body: formData,
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
@@ -148,9 +223,15 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
 
       processAIResponse(json.data);
     } catch (err: any) {
-      setAiError(formatErrorMessage(err));
+      if (err.name === 'AbortError') {
+        setAiError('Receipt processing timed out. Please enter details manually.');
+      } else {
+        setAiError(formatErrorMessage(err));
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsProcessingAI(false);
+      activeAbortController.current = null;
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
@@ -194,11 +275,18 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
     setIsProcessingAI(true);
     setAiError('');
 
+    const controller = new AbortController();
+    activeAbortController.current = controller;
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+
     try {
       const res = await fetch(`${API_BASE}/ai/nlp`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ prompt: nlpText }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
@@ -207,9 +295,15 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
 
       processAIResponse(json.data);
     } catch (err: any) {
-      setAiError(formatErrorMessage(err));
+      if (err.name === 'AbortError') {
+        setAiError('AI request timed out. Please enter details manually.');
+      } else {
+        setAiError(formatErrorMessage(err));
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsProcessingAI(false);
+      activeAbortController.current = null;
     }
   };
 
@@ -303,6 +397,13 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                     <p className="font-semibold text-red-300 text-xs uppercase tracking-wider">Notice</p>
                     <p className="text-sm text-red-400 mt-0.5 leading-relaxed">{aiError}</p>
                   </div>
+                  <button
+                    type="button"
+                    className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold shrink-0 transition-colors"
+                    onClick={() => setStep(1)}
+                  >
+                    Enter Manually
+                  </button>
                 </div>
               )}
               
@@ -319,9 +420,23 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                 onDrop={handleDrop}
               >
                 {isProcessingAI && (
-                  <div className="absolute inset-0 bg-[#121214]/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-3">
+                  <div className="absolute inset-0 bg-[#121214]/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-3">
                     <Loader2 className="w-8 h-8 text-[#b2f5d1] animate-spin" />
                     <span className="text-sm font-bold text-[#b2f5d1] tracking-widest uppercase animate-pulse">Processing AI...</span>
+                    <button
+                      type="button"
+                      className="mt-2 px-3 py-1.5 rounded-lg border border-white/20 text-xs font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activeAbortController.current) {
+                          activeAbortController.current.abort();
+                        }
+                        setIsProcessingAI(false);
+                        setStep(1);
+                      }}
+                    >
+                      Cancel & Enter Manually
+                    </button>
                   </div>
                 )}
                 
@@ -523,7 +638,13 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Split method</span>
                     <span className="text-sm font-medium text-white">
-                      {splitType === 'exact' ? 'By Amount' : splitType === 'shares' ? 'By Share' : 'By Percentage'}
+                      {splitType === 'equal'
+                        ? 'Equally'
+                        : splitType === 'exact'
+                        ? 'By Amount'
+                        : splitType === 'shares'
+                        ? 'By Share'
+                        : 'By Percentage'}
                     </span>
                   </div>
                 </div>
@@ -534,8 +655,11 @@ const AddExpenseModal: React.FC<Props> = ({ group, onClose, onExpenseCreated }) 
                 <div className="flex flex-col divide-y divide-white/5 bg-[#1a1a1c] border border-white/10 rounded-xl px-5">
                   {participants.map((p) => {
                     const member = group.members.find((m) => m._id === p.userId);
+                    const equalPerPerson = participants.length > 0 ? amount / participants.length : 0;
                     const display =
-                      splitType === 'exact'
+                      splitType === 'equal'
+                        ? fmtCurrency(p.amount ?? equalPerPerson)
+                        : splitType === 'exact'
                         ? fmtCurrency(p.amount ?? 0)
                         : splitType === 'shares'
                           ? `${p.shares ?? 0}× share`

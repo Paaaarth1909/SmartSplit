@@ -122,7 +122,16 @@ export default function GroupDetailsView({
     setChatInput('');
   };
 
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency } = useCurrency(group?.currency || 'INR');
+
+  const isGroupAdmin =
+    group.createdBy === currentUserId ||
+    (group.members || []).some(
+      (m: any) =>
+        ((m.userId && (m.userId === currentUserId || m.userId?._id === currentUserId)) ||
+          (m._id && m._id === currentUserId)) &&
+        m.role === 'admin'
+    );
 
   const getPercentage = (val: number, total: number) => {
     if (total === 0) return 0;
@@ -290,16 +299,18 @@ export default function GroupDetailsView({
             ))}
           </div>
 
-          <button
-            onClick={() => {
-              setDeleteError('');
-              setIsDeleteModalOpen(true);
-            }}
-            className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-all cursor-pointer w-fit"
-            title="Delete this group"
-          >
-            <Trash2 className="w-3.5 h-3.5" /> Delete Group
-          </button>
+          {isGroupAdmin && (
+            <button
+              onClick={() => {
+                setDeleteError('');
+                setIsDeleteModalOpen(true);
+              }}
+              className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-all cursor-pointer w-fit"
+              title="Delete this group"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete Group
+            </button>
+          )}
         </div>
 
         <div className="mt-4">

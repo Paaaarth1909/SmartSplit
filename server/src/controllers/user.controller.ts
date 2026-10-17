@@ -69,16 +69,39 @@ export const getUserProfile = async (req: Request, res: Response) => {
 export const updateUserProfile = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const authUserId = (req as any).user?.id || (req as any).user?._id?.toString();
+    if (id !== authUserId) {
+      return res.status(403).json({ error: "Access denied. You can only update your own profile." });
+    }
+
     const { fullName, preferredName, email, phone, avatar } = req.body;
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (fullName) user.fullName = fullName;
-    if (preferredName !== undefined) user.preferredName = preferredName;
-    if (email) user.email = email.toLowerCase();
-    if (phone !== undefined) user.phone = phone;
+    if (fullName) {
+      const cleanName = fullName.replace(/<[^>]*>?/gm, "").trim();
+      if (cleanName.length >= 2 && cleanName.length <= 50) {
+        user.fullName = cleanName;
+      }
+    }
+    if (preferredName !== undefined) {
+      user.preferredName = preferredName.replace(/<[^>]*>?/gm, "").trim();
+    }
+    if (email) user.email = email.toLowerCase().trim();
+    if (phone !== undefined) {
+      const trimmedPhone = String(phone).trim();
+      if (trimmedPhone) {
+        const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+        if (!phoneRegex.test(trimmedPhone)) {
+          return res.status(400).json({ error: "Invalid phone number format." });
+        }
+        user.phone = trimmedPhone;
+      } else {
+        user.phone = "";
+      }
+    }
     if (avatar !== undefined) user.avatar = avatar;
 
     await user.save();
@@ -639,9 +662,28 @@ export const updateCurrentUser = async (req: Request, res: Response) => {
 
     const { fullName, email, phone, currency, theme, compactDensity, liveForex, acousticFeedback, avatar } = req.body;
 
-    if (fullName !== undefined) user.fullName = fullName;
-    if (email !== undefined) user.email = email.toLowerCase();
-    if (phone !== undefined) user.phone = phone;
+    if (fullName !== undefined) {
+      const cleanName = String(fullName).replace(/<[^>]*>?/gm, "").trim();
+      if (cleanName.length >= 2 && cleanName.length <= 50) {
+        user.fullName = cleanName;
+        user.preferredName = cleanName.split(" ")[0];
+      }
+    }
+    if (email !== undefined && String(email).trim()) {
+      user.email = String(email).trim().toLowerCase();
+    }
+    if (phone !== undefined) {
+      const trimmedPhone = String(phone).trim();
+      if (trimmedPhone) {
+        const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+        if (!phoneRegex.test(trimmedPhone)) {
+          return res.status(400).json({ error: "Invalid phone number format." });
+        }
+        user.phone = trimmedPhone;
+      } else {
+        user.phone = "";
+      }
+    }
     if (avatar !== undefined) user.avatar = avatar;
     
     if (!user.preferences) {
@@ -693,13 +735,17 @@ export const searchUsers = async (req: Request, res: Response) => {
 
     const friendIdStrings = new Set((currentUser.friends || []).map((f: any) => f.toString()));
 
+    const trimmedQuery = query.trim();
+    const isFullEmail = trimmedQuery.includes("@");
+
     const filter: any = {
       _id: { $ne: currentUser._id },
-      $or: [
-        { fullName: { $regex: query.trim(), $options: 'i' } },
-        { preferredName: { $regex: query.trim(), $options: 'i' } },
-        { email: { $regex: query.trim(), $options: 'i' } }
-      ]
+      $or: isFullEmail
+        ? [{ email: trimmedQuery.toLowerCase() }]
+        : [
+            { fullName: { $regex: trimmedQuery, $options: 'i' } },
+            { preferredName: { $regex: trimmedQuery, $options: 'i' } }
+          ]
     };
 
     const rawUsers = await User.find(filter)

@@ -55,6 +55,18 @@ export const requireAuth = async (
       });
     }
 
+    if (user.lastLogoutAt && decoded.iat) {
+      const tokenIssuedAt = decoded.iat * 1000;
+      const logoutTime = new Date(user.lastLogoutAt).getTime();
+      // Allow 1 second buffer for clock skew
+      if (tokenIssuedAt < logoutTime - 1000) {
+        return res.status(401).json({
+          success: false,
+          error: "Session has been logged out. Please log in again.",
+        });
+      }
+    }
+
     req.user = {
       id: user._id.toString(),
       email: user.email,

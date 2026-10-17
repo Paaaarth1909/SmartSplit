@@ -168,25 +168,23 @@ export default function RegisterPage() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {password.length > 0 && (
-              <div className="mt-2 text-[11px] grid grid-cols-2 gap-1.5 text-white/50 bg-white/5 p-2.5 rounded-lg border border-white/5">
-                <span className={password.length >= 8 ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {password.length >= 8 ? "✓" : "○"} 8+ characters
-                </span>
-                <span className={/[A-Z]/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/[A-Z]/.test(password) ? "✓" : "○"} Uppercase letter
-                </span>
-                <span className={/[a-z]/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/[a-z]/.test(password) ? "✓" : "○"} Lowercase letter
-                </span>
-                <span className={/\d/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/\d/.test(password) ? "✓" : "○"} Number (0-9)
-                </span>
-                <span className={/[@$!%*?&]/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
-                  {/[@$!%*?&]/.test(password) ? "✓" : "○"} Symbol (@$!%*?&)
-                </span>
-              </div>
-            )}
+            <div className="mt-2 text-[11px] grid grid-cols-2 gap-1.5 text-white/50 bg-white/5 p-2.5 rounded-lg border border-white/5">
+              <span className={password.length >= 8 ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                {password.length >= 8 ? "✓" : "○"} 8+ characters
+              </span>
+              <span className={/[A-Z]/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                {/[A-Z]/.test(password) ? "✓" : "○"} Uppercase letter
+              </span>
+              <span className={/[a-z]/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                {/[a-z]/.test(password) ? "✓" : "○"} Lowercase letter
+              </span>
+              <span className={/\d/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                {/\d/.test(password) ? "✓" : "○"} Number (0-9)
+              </span>
+              <span className={/[@$!%*?&]/.test(password) ? "text-[#27ff9a] font-medium" : "text-white/40"}>
+                {/[@$!%*?&]/.test(password) ? "✓" : "○"} Symbol (@$!%*?&)
+              </span>
+            </div>
           </div>
 
           <div>

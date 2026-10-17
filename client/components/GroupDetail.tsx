@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ArrowLeft, UserPlus, Trash2, Mail, User, Shield, Users, Phone, Plus, Receipt } from 'lucide-react';
 import { Group } from './types';
 import AddExpenseModal from './AddExpenseModal';
+import { useAuth } from '@/context/AuthContext';
 
 interface Props {
   group: Group;
@@ -16,6 +17,14 @@ interface Props {
 }
 
 const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRemoved, onGroupDeleted, apiUrl }) => {
+  const { user } = useAuth();
+  const currentUserId = user?.id || (user as any)?._id;
+  const isGroupAdmin =
+    (group as any).createdBy === currentUserId ||
+    (group.members || []).some(
+      (m: any) =>
+        (m._id === currentUserId || m.userId === currentUserId) && m.role === 'admin'
+    );
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberPhone, setNewMemberPhone] = useState('');
@@ -82,9 +91,11 @@ const GroupDetail: React.FC<Props> = ({ group, onBack, onMemberAdded, onMemberRe
           <button className="btn btn-primary" onClick={() => setShowExpenseModal(true)}>
             <Plus size={16} /> Add Expense
           </button>
-          <button className="btn btn-danger" onClick={handleDeleteGroup}>
-            <Trash2 size={16} /> Delete Group
-          </button>
+          {isGroupAdmin && (
+            <button className="btn btn-danger" onClick={handleDeleteGroup}>
+              <Trash2 size={16} /> Delete Group
+            </button>
+          )}
         </div>
       </div>
 

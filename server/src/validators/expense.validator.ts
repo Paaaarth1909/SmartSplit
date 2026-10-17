@@ -4,9 +4,9 @@ const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format");
 
 const participantSchema = z.object({
   userId: objectId,
-  amount: z.number().nonnegative().optional(),
+  amount: z.number().min(0).max(10_000_000).optional(),
   percentage: z.number().min(0).max(100).optional(),
-  shares: z.number().positive().optional(),
+  shares: z.number().positive().max(1000).optional(),
 });
 
 const splitTypeSchema = z.enum(["equal", "exact", "percentage", "shares"]);
@@ -15,7 +15,7 @@ export const createExpenseSchema = z.object({
   body: z.object({
     groupId: objectId,
     description: z.string().trim().min(1).max(200),
-    amount: z.number().positive(),
+    amount: z.number().min(0.01, "Amount must be at least 0.01").max(10_000_000, "Amount cannot exceed 10,000,000"),
     currency: z.string().trim().max(10).optional(),
     category: z.string().trim().max(50).optional(),
     paidBy: objectId,
@@ -27,7 +27,6 @@ export const createExpenseSchema = z.object({
     imageHash: z.string().optional(),
     receiptMerchant: z.string().optional(),
     receiptDate: z.string().optional(),
-    
     forceCreate: z.boolean().optional(),
   }),
 });
@@ -36,7 +35,7 @@ export const updateExpenseSchema = z.object({
   params: z.object({ expenseId: objectId }),
   body: z.object({
     description: z.string().trim().min(1).max(200).optional(),
-    amount: z.number().positive().optional(),
+    amount: z.number().min(0.01).max(10_000_000).optional(),
     currency: z.string().trim().max(10).optional(),
     category: z.string().trim().max(50).optional(),
     paidBy: objectId.optional(),
@@ -55,7 +54,7 @@ export const groupIdParamSchema = z.object({
 
 export const previewSplitSchema = z.object({
   body: z.object({
-    amount: z.number().positive(),
+    amount: z.number().min(0).max(10_000_000),
     splitType: splitTypeSchema,
     participants: z.array(participantSchema).min(1),
   }),

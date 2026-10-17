@@ -6,13 +6,22 @@ import { User } from "../models/User.js";
 import { generateToken } from "../utils/jwt.js";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 import { sendOtpEmail } from "../services/email.service.js";
+import { recordFailedLogin, clearFailedLogin } from "../middleware/rateLimit.middleware.js";
+
+const sanitizeText = (str: string): string => {
+  return (str || "").replace(/<[^>]*>?/gm, "").trim();
+};
 
 export const register = async (req: Request, res: Response) => {
   try {
     const { fullName, email, password, phone, avatar } = req.body;
 
-    if (!fullName || !fullName.trim()) {
-      return res.status(400).json({ success: false, error: "Full name is required" });
+    const cleanFullName = sanitizeText(fullName);
+    if (!cleanFullName || cleanFullName.length < 2 || cleanFullName.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: "Full name must be between 2 and 50 characters (HTML tags not allowed)",
+      });
     }
 
     if (!email || !email.trim()) {
@@ -22,6 +31,18 @@ export const register = async (req: Request, res: Response) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       return res.status(400).json({ success: false, error: "Invalid email address format" });
+    }
+
+    let cleanPhone = "";
+    if (phone && String(phone).trim()) {
+      const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+      if (!phoneRegex.test(String(phone).trim())) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid phone number format. Please provide a valid phone number (digits, optional leading +).",
+        });
+      }
+      cleanPhone = String(phone).trim();
     }
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -42,14 +63,14 @@ export const register = async (req: Request, res: Response) => {
       });
     }
 
-    const preferredName = fullName.trim().split(" ")[0];
+    const preferredName = cleanFullName.split(" ")[0];
 
     const newUser = await User.create({
-      fullName: fullName.trim(),
+      fullName: cleanFullName,
       preferredName,
       email: normalizedEmail,
       password,
-      phone: phone ? phone.trim() : "",
+      phone: cleanPhone,
       avatar: avatar || "",
       preferences: {
         currency: "INR",
@@ -64,6 +85,13 @@ export const register = async (req: Request, res: Response) => {
       id: newUser._id.toString(),
       email: newUser.email,
       fullName: newUser.fullName,
+    });
+
+    res.cookie("smartsplit_auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(201).json({
@@ -105,6 +133,7 @@ export const login = async (req: Request, res: Response) => {
     const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
     if (!user) {
+      recordFailedLogin(normalizedEmail);
       return res.status(401).json({
         success: false,
         error: "Invalid email or password",
@@ -120,16 +149,26 @@ export const login = async (req: Request, res: Response) => {
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      recordFailedLogin(normalizedEmail);
       return res.status(401).json({
         success: false,
         error: "Invalid email or password",
       });
     }
 
+    clearFailedLogin(normalizedEmail);
+
     const token = generateToken({
       id: user._id.toString(),
       email: user.email,
       fullName: user.fullName,
+    });
+
+    res.cookie("smartsplit_auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.json({
@@ -152,6 +191,23 @@ export const login = async (req: Request, res: Response) => {
       success: false,
       error: error.message || "Failed to log in",
     });
+  }
+};
+
+export const logout = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (userId) {
+      await User.findByIdAndUpdate(userId, { lastLogoutAt: new Date() });
+    }
+    res.clearCookie("smartsplit_auth_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    return res.json({ success: true, message: "Logged out successfully" });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: "Logout failed" });
   }
 };
 
@@ -201,9 +257,10 @@ export const requestPasswordResetOtp = async (req: Request, res: Response) => {
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: "No account found with this email address",
+      // Prevent account enumeration by returning generic success
+      return res.json({
+        success: true,
+        message: "If an account exists with this email address, a password reset code has been sent.",
       });
     }
 
@@ -219,10 +276,7 @@ export const requestPasswordResetOtp = async (req: Request, res: Response) => {
     const emailResult = await sendOtpEmail(normalizedEmail, otp);
 
     if (!emailResult.success) {
-      return res.status(500).json({
-        success: false,
-        error: emailResult.error || "Failed to dispatch OTP email. Please ensure your SMTP configuration is active and correct on the server.",
-      });
+      console.warn(`[AUTH] Email sending notice for ${normalizedEmail}: ${emailResult.error}`);
     }
 
     return res.json({
@@ -233,7 +287,7 @@ export const requestPasswordResetOtp = async (req: Request, res: Response) => {
     console.error("Request OTP error:", error);
     return res.status(500).json({
       success: false,
-      error: "Failed to process OTP request",
+      error: "Failed to process password reset request. Please try again later.",
     });
   }
 };
@@ -319,9 +373,17 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
-export const exportUsers = async (_req: Request, res: Response) => {
+export const exportUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.find({}).select("+password").lean();
+    if (process.env.NODE_ENV === "production") {
+      return res.status(403).json({ success: false, error: "Access denied" });
+    }
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
+    const users = await User.find({}).select("-password").lean();
     const formatted = users.map((u) => ({
       id: u._id.toString(),
       fullName: u.fullName,

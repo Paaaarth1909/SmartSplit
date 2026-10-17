@@ -5,6 +5,57 @@ import { Expense } from "../models/Expense.js";
 import { calculateSettlements } from "../utils/debtCalculator.js";
 import { emitToGroup, emitToUser } from "../socket.js";
 
+export const isUserAuthorizedForGroup = (
+  group: any,
+  userId?: string,
+  userEmail?: string,
+  userPhone?: string
+): boolean => {
+  if (!group) return false;
+  const uid = userId?.toString();
+  if (
+    group.createdBy &&
+    (group.createdBy.toString() === uid ||
+      (group.createdBy._id && group.createdBy._id.toString() === uid))
+  ) {
+    return true;
+  }
+  const cleanEmail = (userEmail || "").toLowerCase().trim();
+  const cleanPhone = (userPhone || "").trim();
+  return (group.members || []).some((m: any) => {
+    if (uid && m._id && m._id.toString() === uid) return true;
+    const mEmail = (m.email || "").toLowerCase().trim();
+    const mPhone = (m.phone || "").trim();
+    if (cleanEmail && mEmail && mEmail === cleanEmail) return true;
+    if (cleanPhone && mPhone && mPhone === cleanPhone) return true;
+    return false;
+  });
+};
+
+export const isUserGroupAdmin = (
+  group: any,
+  userId?: string,
+  userEmail?: string
+): boolean => {
+  if (!group) return false;
+  const uid = userId?.toString();
+  if (
+    group.createdBy &&
+    (group.createdBy.toString() === uid ||
+      (group.createdBy._id && group.createdBy._id.toString() === uid))
+  ) {
+    return true;
+  }
+  const cleanEmail = (userEmail || "").toLowerCase().trim();
+  return (group.members || []).some((m: any) => {
+    if (m.role !== "admin") return false;
+    if (uid && m._id && m._id.toString() === uid) return true;
+    const mEmail = (m.email || "").toLowerCase().trim();
+    if (cleanEmail && mEmail && mEmail === cleanEmail) return true;
+    return false;
+  });
+};
+
 export const createGroup = async (req: Request, res: Response) => {
   try {
     const { name, description, initialMembers, friendIds } = req.body;
@@ -172,9 +223,17 @@ export const getGroups = async (req: Request, res: Response) => {
 export const getGroupById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id || (req as any).user?._id?.toString();
+    const userEmail = (req as any).user?.email;
+    const userPhone = (req as any).user?.phone;
+
     const group = await Group.findById(id);
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (!isUserAuthorizedForGroup(group, userId, userEmail, userPhone)) {
+      return res.status(403).json({ error: "Access denied. You are not a member of this group." });
     }
 
     if (!group.inviteCode) {
@@ -190,9 +249,20 @@ export const getGroupById = async (req: Request, res: Response) => {
 export const getOrGenerateInviteCode = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id || (req as any).user?._id?.toString();
+    const userEmail = (req as any).user?.email;
+    const userPhone = (req as any).user?.phone;
+
     const group = await Group.findById(id);
     if (!group) {
       return res.status(404).json({ success: false, error: "Group not found" });
+    }
+
+    if (!isUserAuthorizedForGroup(group, userId, userEmail, userPhone)) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. You must be a member of the group to access invite codes.",
+      });
     }
 
     const inviteCode = await ensureGroupInviteCode(group);
@@ -339,7 +409,7 @@ export const removeMember = async (req: Request, res: Response) => {
 export const deleteGroup = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.id || (req as any).user?._id?.toString();
     const userEmail = ((req as any).user?.email || "").toLowerCase().trim();
 
     const group = await Group.findById(id);
@@ -347,14 +417,8 @@ export const deleteGroup = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Group not found" });
     }
 
-    const isAuthorized =
-      group.createdBy === userId ||
-      group.members.some(
-        (m) => m.email && m.email.toLowerCase().trim() === userEmail
-      );
-
-    if (!isAuthorized) {
-      return res.status(403).json({ error: "You are not authorized to delete this group" });
+    if (!isUserGroupAdmin(group, userId, userEmail)) {
+      return res.status(403).json({ error: "Only the group creator or admin can delete this group" });
     }
 
     await Group.findByIdAndDelete(id);
@@ -386,6 +450,19 @@ export const deleteGroup = async (req: Request, res: Response) => {
 export const getGroupMessages = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id || (req as any).user?._id?.toString();
+    const userEmail = (req as any).user?.email;
+    const userPhone = (req as any).user?.phone;
+
+    const group = await Group.findById(id);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (!isUserAuthorizedForGroup(group, userId, userEmail, userPhone)) {
+      return res.status(403).json({ error: "Access denied. You are not a member of this group." });
+    }
+
     const { GroupMessage } = await import("../models/GroupMessage.js");
     const messages = await GroupMessage.find({ group: id })
       .sort({ createdAt: 1 })
@@ -531,9 +608,17 @@ export const settleGroupDebt = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: "Payer and receiver are required." });
     }
 
+    if (payerId === receiverId) {
+      return res.status(400).json({ success: false, error: "Payer and receiver cannot be the same person." });
+    }
+
     const settleAmount = Number(amount);
     if (isNaN(settleAmount) || settleAmount <= 0) {
       return res.status(400).json({ success: false, error: "A valid positive settlement amount is required." });
+    }
+
+    if (settleAmount > 10000000) {
+      return res.status(400).json({ success: false, error: "Settlement amount exceeds maximum allowable limit." });
     }
 
     const group = await Group.findById(id);

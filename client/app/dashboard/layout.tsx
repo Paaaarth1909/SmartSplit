@@ -95,12 +95,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={logout}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/60 hover:text-red-400 hover:bg-white/5 text-sm font-medium transition-colors w-full cursor-pointer text-left"
           >
-            <LogOut className="w-4 h-4" /> 
-            <span className="flex-1 text-left">Logout</span>
-            <div className="scale-[0.65] origin-right">
-              <div className="w-8 h-8 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-xs font-bold text-white">
-                {userInitial}
-              </div>
+            <LogOut className="w-4 h-4 shrink-0" /> 
+            <span className="flex-1 text-left truncate">Logout</span>
+            <div className="w-6 h-6 rounded-full bg-[#1a1a1c] border border-white/10 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+              {userInitial}
             </div>
           </button>
         </div>
